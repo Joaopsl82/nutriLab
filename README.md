@@ -29,3 +29,6 @@ Projeto desenvolvido durante a PyStack Week 4.0 utilizando Python, Django e SQLi
   b. `python manage.py migrate`
   <br><br>
   Se estiver no Linux é só digitar python3 e copiar o restante do código
+
+# Visualizando o projeto
+  Para visualizar o projeto após iniciar o servidor entre no link: `127.0.0.1:8000/auth/logar`
