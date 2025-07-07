@@ -1,5 +1,5 @@
 # nutriLab
-Projeto desenvolvido durante a PyStack Week 4.0 utilizando Python, Django e SQLite
+Plataforma de gerenciamento de dieta para nutricionistas.
 
 # Clonando o projeto
 1. git clone https://github.com/Joaopsl82/nutriLab.git para clonar o projeto
