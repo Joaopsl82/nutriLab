@@ -1,5 +1,6 @@
 {% extends 'base_plataforma.html' %}
 {% load static %}
+{% load paciente_tags %}
 
 {% block 'plataforma' %}
 
@@ -15,37 +16,21 @@
     <br>
     </div>
 
-    <div class="print-only">
-        <h2 class="mb-1">Plano alimentar</h2>
-        <p class="mb-0"><strong>Paciente:</strong> {{ paciente.nome }} &mdash; {{ paciente.idade }} anos</p>
-        <hr>
-    </div>
-
-    <div class="row no-print">
-
-        <div class="col-md-3">
-                {% if paciente.sexo == "M"%}
-                    <img src="{% static 'plataforma/img/perfil2.png' %}">
-                {% else %}
-                    <img src="{% static 'plataforma/img/perfil1.png' %}">
-                {% endif %}
+    <div class="no-print d-flex align-items-center gap-3 mb-4 flex-column flex-sm-row text-center text-sm-left">
+        {% paciente_avatar paciente 56 %}
+        <div>
+            <h1 class="nl-page-title mb-1">Plano alimentar</h1>
+            <p class="nl-page-sub mb-0"><strong>{{ paciente.nome }}</strong> &mdash; {{ paciente.idade }} anos</p>
         </div>
-
-        <div class="col-md-3 dados descricao">
-            <h4>{{paciente.nome}}</h4>
-            <h6>{{paciente.idade}} Anos</h6>
-        </div>
-        
     </div>
-    <hr class="no-print">
+    
+    <hr class="print-only">
 
-
-    <div class="no-print mb-3">
-    <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal">
+    <div class="no-print mb-3 d-flex flex-wrap gap-2 plano-botoes-acoes">
+    <button type="button" class="btn btn-nl-primary" data-toggle="modal" data-target="#modal">
         + Nova refeição
     </button>
-
-    <button type="button" class="btn btn-outline-primary" id="pdf" title="Abre a janela de impressão; escolha &quot;Guardar como PDF&quot; se quiser ficheiro.">
+    <button type="button" class="btn btn-nl-outline" id="pdf" title="Use a impressão do navegador para guardar em PDF.">
         Exportar refeição
     </button>
     </div>
@@ -54,28 +39,23 @@
         
     {% for re in refeicao %}
     <div class="refeicao">
-        <div class="head-refeicao">
-            <span>{{re.titulo}}</span>
-
-            <span style="float: right;">{{re.horario}}h</span>
-
+        <div class="head-refeicao d-flex justify-content-between align-items-center flex-wrap">
+            <span class="pr-2">{{ re.titulo }}</span>
+            <span class="text-nowrap">{{ re.horario }}h</span>
         </div>
 
         <div class="body-refeicao">
             {% for o1 in opcao%}
                 {% if o1.refeicao == re %}
                     <div class="opcao">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <img width="100%" src="{{o1.imagem.url}}"> 
+                        <div class="row align-items-center">
+                            <div class="col-12 col-md-3 col-lg-2 mb-2 mb-md-0 text-center text-md-left">
+                                <img class="img-fluid rounded nl-opcao-img" src="{{ o1.imagem.url }}" alt="">
                             </div>
-
-                            <div class="col-md-10">
-                                {{o1.descricao}}
+                            <div class="col-12 col-md-9 col-lg-10">
+                                {{ o1.descricao }}
                             </div>
-
                         </div>
-
                     </div>
                     <br>
                 {% endif %}
@@ -95,7 +75,7 @@
 
 
     <div class="modal fade no-print" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered nl-modal-responsive" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     
@@ -108,13 +88,14 @@
                     
                         <h4 class="titulo">Adicionar refeição</h4>
 
-                        <button type="button" onclick = "exibe_refeicao()" class="btn btn-outline-success">
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button type="button" onclick="exibe_refeicao()" class="btn btn-nl-outline">
                             + Nova refeição
                         </button>
-
-                        <button style="margin-left: 10px;" type="button" onclick="exibe_opcao()"  class="btn btn-outline-success" >
+                        <button type="button" onclick="exibe_opcao()" class="btn btn-nl-outline">
                             + Nova opção
                         </button>
+                        </div>
                         <br>
                         <br>
                         
@@ -131,23 +112,23 @@
                                 </div>
                                 <br>
                                 <h5 class="titulo">Macronutrientes</h5>
-                                <div class="container">
+                                <div class="container px-0">
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-12 col-md-4 mb-3 mb-md-0">
                                             <label for="validationServerUsername">Carboidratos</label>
                                             <div class="input-group">
                                                 <input type="text" class="form-control" placeholder="" name="carboidratos">
                                             </div>
                                         </div>
 
-                                        <div class="col-md-4">
+                                        <div class="col-12 col-md-4 mb-3 mb-md-0">
                                             <label for="validationServerUsername">Proteínas</label>
                                             <div class="input-group">
                                                 <input type="text" class="form-control" placeholder="" name="proteinas">
                                             </div>
                                         </div>
 
-                                        <div class="col-md-4">
+                                        <div class="col-12 col-md-4">
                                             <label for="validationServerUsername">Gorduras</label>
                                             <div class="input-group">
                                                 <input type="text" class="form-control" placeholder="" name="gorduras">
@@ -157,12 +138,9 @@
                                     </div>
                                 </div>
                                 <br>
-                                <input type="submit" value="Cadastrar" class="btn btn-success">
+                                <input type="submit" value="Cadastrar refeição" class="btn btn-nl-primary">
                             </form>
                         </div>
-
-
-
 
                         <div id="form-opcao" style="display: none;">
                             <form action="{% url 'opcao' paciente.id %}" method="POST" enctype='multipart/form-data'>{% csrf_token %}
@@ -192,7 +170,7 @@
                                     </textarea>
                                 </div>
                                 <br>
-                                <input type="submit" value="Cadastrar" class="btn btn-success">
+                                <input type="submit" value="Cadastrar opção" class="btn btn-nl-primary">
                             </form>
                         </div>
 

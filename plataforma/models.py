@@ -7,6 +7,11 @@ class Pacientes(models.Model):
         ('F', 'Feminino'),
         ('M', 'Masculino'),
     )
+    choices_situacao = (
+        ('ativo', 'Ativo'),
+        ('pausa', 'Pausado / revisão'),
+        ('alta', 'Alta'),
+    )
     nome = models.CharField(max_length=50)
     foto = models.ImageField(
         upload_to='pacientes/fotos',
@@ -18,6 +23,19 @@ class Pacientes(models.Model):
     idade = models.IntegerField()
     email = models.EmailField()
     telefone = models.CharField(max_length=19)
+    situacao = models.CharField(
+        max_length=20,
+        choices=choices_situacao,
+        default='ativo',
+        verbose_name='Situação',
+    )
+    peso_meta = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Meta de peso (kg)',
+    )
     nutri = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class Meta:
@@ -30,6 +48,23 @@ class Pacientes(models.Model):
 
     def __str__(self):
         return self.nome
+
+
+class AnotacaoPaciente(models.Model):
+    paciente = models.ForeignKey(
+        Pacientes,
+        on_delete=models.CASCADE,
+        related_name='anotacoes',
+    )
+    nutri = models.ForeignKey(User, on_delete=models.CASCADE)
+    texto = models.TextField(max_length=2000)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-criado_em']
+
+    def __str__(self):
+        return f"Anotação {self.paciente.nome} ({self.criado_em:%Y-%m-%d})"
 
 
 class DadosPaciente(models.Model):

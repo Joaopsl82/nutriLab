@@ -1,110 +1,341 @@
 {% extends 'base_plataforma.html' %}
 {% load static %}
-
+{% load paciente_tags %}
 
 {% block 'plataforma' %}
 
+<div class="no-print">
 {% if messages %}
-        <br>
-        {% for message in messages %}
-            <div class="alert {{message.tags}}">
-                {{message}}
-            </div>
-        {% endfor %}
-{% endif %}
-
-    <br>
-<button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal">
-  Novo paciente
-</button>
-
-<br>
-<br>
-<div  class="row">
-
-    {% for paciente in pacientes %}
-    <div class="col-md-4">
-        <a href="#" class="link-hover">
-            <div class="card-paciente">
-                <div class="foto-perfil">
-                
-                    {% if paciente.sexo == "M"%}
-                        <img src="{% static 'plataforma/img/perfil2.png' %}">
-                    {% else %}
-                        <img src="{% static 'plataforma/img/perfil1.png' %}">
-                    {% endif %}
-
-                </div>
-                <br>
-                <p class="dados">Nome: {{paciente.nome}}</p>
-                <p class="dados">Idade: {{paciente.idade}} anos</p>
-                <p class="dados">Email: {{paciente.email}}</p>
-            </div>
-        </a>
-    </div>
+    {% for message in messages %}
+        <div class="alert {{ message.tags }} mb-2">{{ message }}</div>
     {% endfor %}
-    
+{% endif %}
 </div>
 
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4 nl-toolbar-page">
+    <div>
+        <h1 class="nl-page-title mb-0">Pacientes</h1>
+        <p class="nl-page-sub mb-0">Gerencie cadastros e acompanhe cada pessoa atendida</p>
+    </div>
+    <button type="button" class="btn btn-nl-primary" data-toggle="modal" data-target="#modal">
+        + Novo paciente
+    </button>
+</div>
 
-<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+<form method="get" class="no-print nl-filtros-pacientes mb-4">
+    <div class="form-row align-items-end">
+        <div class="col-12 col-md-5 mb-2 mb-md-0">
+            <label for="filtro-q" class="small text-muted mb-1 d-block">Pesquisar</label>
+            <input type="search" id="filtro-q" name="q" class="form-control" placeholder="Nome, e-mail ou telefone" value="{{ filtro_q }}">
+        </div>
+        <div class="col-12 col-md-4 mb-2 mb-md-0">
+            <label for="filtro-situacao" class="small text-muted mb-1 d-block">Situação</label>
+            <select id="filtro-situacao" name="situacao" class="form-control">
+                <option value="" {% if not filtro_situacao %}selected{% endif %}>Todas</option>
+                {% for val, label in situacao_choices %}
+                <option value="{{ val }}" {% if filtro_situacao == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <button type="submit" class="btn btn-nl-primary btn-block">Filtrar</button>
+        </div>
+        <div class="col-6 col-md-1">
+            <a href="{% url 'pacientes' %}" class="btn btn-nl-outline btn-block" title="Limpar filtros">Limpar</a>
+        </div>
+    </div>
+</form>
+
+<div class="row">
+    {% for paciente in pacientes %}
+    <div class="col-sm-6 col-lg-4 mb-4">
+        <div class="nl-card-paciente nl-card-paciente--wrap h-100 d-flex flex-column">
+            <a href="{% url 'dados_paciente' paciente.id %}" class="nl-card-paciente-link flex-grow-1">
+                <div class="foto-perfil">
+                    {% paciente_avatar paciente 96 %}
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                    <div class="nome-destaque mb-0">{{ paciente.nome }}</div>
+                    <span class="badge nl-badge-situacao nl-badge-situacao--{{ paciente.situacao }}">{{ paciente.get_situacao_display }}</span>
+                </div>
+                <p class="dados mb-1"><strong>Idade</strong> — {{ paciente.idade }} anos</p>
+                <p class="dados mb-1"><strong>E-mail</strong> — {{ paciente.email }}</p>
+                <p class="dados mb-0"><strong>Telefone</strong> — {{ paciente.telefone }}</p>
+            </a>
+            <div class="nl-card-paciente-actions mt-3 pt-3 border-top d-flex flex-wrap align-items-center gap-2">
+                <button type="button"
+                        class="btn btn-sm btn-nl-outline js-editar-paciente"
+                        data-toggle="modal"
+                        data-target="#modalEditar"
+                        data-url="{% url 'paciente_editar' paciente.id %}"
+                        data-nome="{{ paciente.nome|escape }}"
+                        data-sexo="{{ paciente.sexo|escape }}"
+                        data-idade="{{ paciente.idade }}"
+                        data-email="{{ paciente.email|escape }}"
+                        data-telefone="{{ paciente.telefone|escape }}"
+                        data-situacao="{{ paciente.situacao|escape }}"
+                        {% if paciente.foto %}data-foto-url="{{ paciente.foto.url|escape }}"{% endif %}>
+                    Editar
+                </button>
+                <form method="post" action="{% url 'paciente_excluir' paciente.id %}" class="d-inline mb-0"
+                      onsubmit="return confirm('Remover este paciente? Esta ação não pode ser desfeita.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="nl-card-paciente text-center py-5">
+            {% if filtro_q or filtro_situacao %}
+            <p class="text-muted mb-3">Nenhum paciente corresponde aos filtros.</p>
+            <a href="{% url 'pacientes' %}" class="btn btn-nl-outline">Limpar filtros</a>
+            {% else %}
+            <p class="text-muted mb-3">Nenhum paciente cadastrado ainda.</p>
+            <button type="button" class="btn btn-nl-primary" data-toggle="modal" data-target="#modal">Cadastrar primeiro paciente</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="modalNovoPaciente" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered nl-modal-responsive" role="document">
       <div class="modal-content">
           <div class="modal-header">
-              <h5 class="modal-title titulo" id="exampleModalLabel">Cadastrar paciente</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <h5 class="modal-title titulo" id="modalNovoPaciente">Novo paciente</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
               <span aria-hidden="true">&times;</span>
               </button>
           </div>
-          
           <div class="modal-body">
-              <form action="{% url 'pacientes' %}" method="POST">{% csrf_token %}
-
-
-                  <div class="row">
-
-                      <div class="col-md-3">
-                          <img src="{% static 'plataforma/img/perfil2.png' %}">
+              <form action="{% url 'pacientes' %}" method="POST" enctype="multipart/form-data">{% csrf_token %}
+                  <div class="row align-items-start">
+                      <div class="col-sm-auto text-center mb-3 mb-sm-0">
+                          <div id="preview-foto-wrap" class="paciente-avatar-wrap mx-auto" style="width: 100px; height: 100px;">
+                              <img id="preview-foto" src="{% static 'plataforma/img/perfil2.png' %}" alt="" class="paciente-avatar-img" width="100" height="100">
+                          </div>
+                          <label class="btn btn-sm btn-nl-outline mt-2 mb-0" style="cursor:pointer;">
+                              Foto de perfil
+                              <input type="file" name="foto" id="input-foto-paciente" accept="image/*" class="d-none">
+                          </label>
+                          <p class="small text-muted mt-1 mb-0">Opcional · JPG ou PNG</p>
                       </div>
-
-                      <div class="col-md-9">
-                          <label>Nome:</label>
-                          <input type="text" placeholder="Digite o nome do paciente..." class="form-control" name="nome">
+                      <div class="col">
+                          <label class="font-weight-bold">Nome completo</label>
+                          <input type="text" class="form-control" name="nome" placeholder="Nome do paciente" required>
+                          <div class="row mt-3">
+                              <div class="col-md-4">
+                                  <label>Sexo</label>
+                                  <select name="sexo" class="form-control" id="select-sexo-paciente">
+                                      <option value="M">Masculino</option>
+                                      <option value="F">Feminino</option>
+                                  </select>
+                              </div>
+                              <div class="col-md-4">
+                                  <label>Idade</label>
+                                  <input type="number" min="0" class="form-control" name="idade" placeholder="Anos" required>
+                              </div>
+                              <div class="col-md-12 mt-3">
+                                  <label>E-mail</label>
+                                  <input type="email" class="form-control" name="email" placeholder="email@exemplo.com" required>
+                              </div>
+                              <div class="col-md-12 mt-3">
+                                  <label>Telefone</label>
+                                  <input type="text" class="form-control" name="telefone" placeholder="(00) 00000-0000" required>
+                              </div>
+                              <div class="col-md-12 mt-3">
+                                  <label>Situação</label>
+                                  <select name="situacao" class="form-control">
+                                      {% for val, label in situacao_choices %}
+                                      <option value="{{ val }}" {% if val == 'ativo' %}selected{% endif %}>{{ label }}</option>
+                                      {% endfor %}
+                                  </select>
+                              </div>
+                          </div>
                       </div>
-
                   </div>
-
-                  <br>
-                  <label>Sexo:</label>
-                  <select name="sexo" class="form-control">
-                      <option value="M">Masculino</option>
-                      <option value="F">Feminino</option>
-                  </select>
-
-                  <br>
-
-                  <label>Idade:</label>
-                  <input type="number" placeholder="0" class="form-control" name="idade">
-                  
-                  <br>
-                  
-                  <label>E-mail:</label>
-                  <input type="email" placeholder="exemple@email.com" class="form-control" name="email">   
-
-                  <br>
-                  
-                  <label>Telefone:</label>
-                  <input type="text" placeholder="+55 (00) 00000-0000" class="form-control" name="telefone">
-                  <br>
-                  <input type="submit" class="btn btn-success btn-lg" value="Registar">
-              
+                  <div class="mt-4 d-flex justify-content-end gap-2">
+                      <button type="button" class="btn btn-nl-outline" data-dismiss="modal">Cancelar</button>
+                      <button type="submit" class="btn btn-nl-primary">Salvar paciente</button>
+                  </div>
               </form>
-
-
           </div>
-      
       </div>
   </div>
 </div>
 
+<div class="modal fade" id="modalEditar" tabindex="-1" role="dialog" aria-labelledby="modalEditarTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered nl-modal-responsive" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title titulo" id="modalEditarTitulo">Editar paciente</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body">
+              <form id="form-editar-paciente" method="POST" enctype="multipart/form-data" action="#">{% csrf_token %}
+                  <div class="row align-items-start">
+                      <div class="col-sm-auto text-center mb-3 mb-sm-0">
+                          <div class="paciente-avatar-wrap mx-auto" style="width: 100px; height: 100px;">
+                              <img id="preview-foto-editar" src="" alt="" class="paciente-avatar-img" width="100" height="100">
+                          </div>
+                          <label class="btn btn-sm btn-nl-outline mt-2 mb-0" style="cursor:pointer;">
+                              Alterar foto
+                              <input type="file" name="foto" id="input-foto-editar" accept="image/*" class="d-none">
+                          </label>
+                          <div class="custom-control custom-checkbox mt-2 text-left">
+                              <input type="checkbox" class="custom-control-input" name="remover_foto" value="1" id="edit-remover-foto">
+                              <label class="custom-control-label small" for="edit-remover-foto">Remover foto atual</label>
+                          </div>
+                      </div>
+                      <div class="col">
+                          <label class="font-weight-bold">Nome completo</label>
+                          <input type="text" class="form-control" name="nome" id="edit-nome" required>
+                          <div class="row mt-3">
+                              <div class="col-md-4">
+                                  <label>Sexo</label>
+                                  <select name="sexo" class="form-control" id="edit-sexo">
+                                      <option value="M">Masculino</option>
+                                      <option value="F">Feminino</option>
+                                  </select>
+                              </div>
+                              <div class="col-md-4">
+                                  <label>Idade</label>
+                                  <input type="number" min="0" class="form-control" name="idade" id="edit-idade" required>
+                              </div>
+                              <div class="col-md-12 mt-3">
+                                  <label>E-mail</label>
+                                  <input type="email" class="form-control" name="email" id="edit-email" required>
+                              </div>
+                              <div class="col-md-12 mt-3">
+                                  <label>Telefone</label>
+                                  <input type="text" class="form-control" name="telefone" id="edit-telefone" required>
+                              </div>
+                              <div class="col-md-12 mt-3">
+                                  <label>Situação</label>
+                                  <select name="situacao" class="form-control" id="edit-situacao">
+                                      {% for val, label in situacao_choices %}
+                                      <option value="{{ val }}">{{ label }}</option>
+                                      {% endfor %}
+                                  </select>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="mt-4 d-flex justify-content-end gap-2">
+                      <button type="button" class="btn btn-nl-outline" data-dismiss="modal">Cancelar</button>
+                      <button type="submit" class="btn btn-nl-primary">Guardar alterações</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
+
+<script>
+(function () {
+    var staticM = '{% static "plataforma/img/perfil2.png" %}';
+    var staticF = '{% static "plataforma/img/perfil1.png" %}';
+    var input = document.getElementById('input-foto-paciente');
+    var preview = document.getElementById('preview-foto');
+    var sexo = document.getElementById('select-sexo-paciente');
+    var defaults = { M: staticM, F: staticF };
+    function defaultImg() {
+        return defaults[sexo.value] || defaults.M;
+    }
+    if (input && preview) {
+        input.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                preview.src = URL.createObjectURL(this.files[0]);
+            } else {
+                preview.src = defaultImg();
+            }
+        });
+    }
+    if (sexo && preview && input) {
+        sexo.addEventListener('change', function () {
+            if (!input.files || !input.files[0]) {
+                preview.src = defaultImg();
+            }
+        });
+    }
+
+    var formEditar = document.getElementById('form-editar-paciente');
+    var previewEdit = document.getElementById('preview-foto-editar');
+    var inputEdit = document.getElementById('input-foto-editar');
+    var chkRemover = document.getElementById('edit-remover-foto');
+    var lastFotoUrl = '';
+
+    function setPreviewEditar(url, sexoVal) {
+        if (url) {
+            previewEdit.src = url;
+        } else {
+            previewEdit.src = (sexoVal === 'F') ? staticF : staticM;
+        }
+    }
+
+    /* Bootstrap 4 dispara eventos de modal via jQuery: addEventListener nativo não recebe show.bs.modal.
+       Preenchemos no clique em "Editar" para o action apontar para .../editar/ e os campos virem do servidor. */
+    function prepararModalEditar(btn) {
+        if (!formEditar || !btn) return;
+        var url = btn.getAttribute('data-url');
+        if (!url || url === '#') return;
+        formEditar.setAttribute('action', url);
+        document.getElementById('edit-nome').value = btn.getAttribute('data-nome') || '';
+        document.getElementById('edit-sexo').value = btn.getAttribute('data-sexo') || 'M';
+        document.getElementById('edit-idade').value = btn.getAttribute('data-idade') || '';
+        document.getElementById('edit-email').value = btn.getAttribute('data-email') || '';
+        document.getElementById('edit-telefone').value = btn.getAttribute('data-telefone') || '';
+        var sit = document.getElementById('edit-situacao');
+        if (sit) sit.value = btn.getAttribute('data-situacao') || 'ativo';
+        chkRemover.checked = false;
+        if (inputEdit) inputEdit.value = '';
+        lastFotoUrl = btn.getAttribute('data-foto-url') || '';
+        setPreviewEditar(lastFotoUrl, btn.getAttribute('data-sexo') || 'M');
+    }
+
+    /* Delegação nativa (o jQuery em base.html carrega depois deste script; não usar $ aqui). */
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.js-editar-paciente');
+        if (btn) prepararModalEditar(btn);
+    });
+
+    if (formEditar) {
+        formEditar.addEventListener('submit', function (e) {
+            var act = formEditar.getAttribute('action') || '';
+            if (!act || act === '#' || act.indexOf('/editar/') === -1) {
+                e.preventDefault();
+                alert('Não foi possível definir o endereço de gravação. Feche o modal e clique em Editar novamente.');
+            }
+        });
+    }
+
+    if (inputEdit && previewEdit && chkRemover) {
+        inputEdit.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                chkRemover.checked = false;
+                previewEdit.src = URL.createObjectURL(this.files[0]);
+            }
+        });
+        chkRemover.addEventListener('change', function () {
+            if (this.checked) {
+                if (inputEdit) inputEdit.value = '';
+                setPreviewEditar('', document.getElementById('edit-sexo').value);
+            } else {
+                setPreviewEditar(lastFotoUrl, document.getElementById('edit-sexo').value);
+            }
+        });
+        document.getElementById('edit-sexo').addEventListener('change', function () {
+            if (chkRemover.checked) {
+                setPreviewEditar('', this.value);
+            } else if (!inputEdit.files || !inputEdit.files[0]) {
+                setPreviewEditar(lastFotoUrl, this.value);
+            }
+        });
+    }
+})();
+</script>
 {% endblock %}

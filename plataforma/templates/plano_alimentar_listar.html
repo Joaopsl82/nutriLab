@@ -1,42 +1,58 @@
 {% extends 'base_plataforma.html' %}
 {% load static %}
+{% load paciente_tags %}
 
 {% block 'plataforma' %}
 
-    {% if messages %}
-        <br>
-        {% for message in messages %}
-            <div class="alert {{message.tags}}">
-                {{message}}
-            </div>
-        {% endfor %}
-    {% endif %}
-    <br>
-	<h1 class="titulo">Escolha o paciente</h1>
-    <div  class="row">
-        {% for paciente in pacientes%}
-            <div class="col-md-4">
-                <a href="{% url 'plano_alimentar' paciente.id %}" class="link-hover">
-                    <div class="card-paciente">
-                        <div class="foto-perfil">
-                           
-                            {% if paciente.sexo == "M"%}
-                                <img src="{% static 'plataforma/img/perfil2.png' %}">
-                            {% else %}
-                                <img src="{% static 'plataforma/img/perfil1.png' %}">
-                            {% endif %}
-                        </div>
-                        <br>
-                        <p class="dados">{{paciente.nome}}</p>
-                        <p class="dados">{{paciente.idade}} Anos</p>
-                        <p class="dados">{{paciente.email}}</p>
-                        
-                    </div>
-                </a>
-            </div>
-        {% endfor %}
+<div class="no-print">
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {{ message.tags }} mb-2">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+</div>
 
+<h1 class="nl-page-title">Plano alimentar</h1>
+<p class="nl-page-sub">Escolha o paciente para editar ou consultar o plano</p>
+
+<form method="get" class="no-print mb-4">
+    <div class="form-row align-items-end">
+        <div class="col-12 col-md-6 col-lg-5">
+            <label for="q-plano" class="small text-muted mb-1 d-block">Pesquisar</label>
+            <input type="search" id="q-plano" name="q" class="form-control" placeholder="Nome, e-mail ou telefone" value="{{ filtro_q }}">
+        </div>
+        <div class="col-6 col-md-2 mt-2 mt-md-0">
+            <button type="submit" class="btn btn-nl-primary btn-block">Filtrar</button>
+        </div>
+        <div class="col-6 col-md-2 mt-2 mt-md-0">
+            <a href="{% url 'plano_alimentar_listar' %}" class="btn btn-nl-outline btn-block">Limpar</a>
+        </div>
     </div>
+</form>
 
-{% endblock%}
+<div class="row">
+    {% for paciente in pacientes %}
+        <div class="col-sm-6 col-lg-4 mb-4">
+            <a href="{% url 'plano_alimentar' paciente.id %}" class="nl-card-paciente">
+                <div class="foto-perfil">
+                    {% paciente_avatar paciente 96 %}
+                </div>
+                <div class="nome-destaque">{{ paciente.nome }}</div>
+                <p class="dados mb-1">{{ paciente.idade }} anos</p>
+                <p class="dados mb-0">{{ paciente.email }}</p>
+            </a>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            {% if filtro_q %}
+            <p class="text-muted">Nenhum resultado para «{{ filtro_q }}».</p>
+            <a href="{% url 'plano_alimentar_listar' %}" class="btn btn-nl-outline">Limpar pesquisa</a>
+            {% else %}
+            <p class="text-muted">Nenhum paciente cadastrado.</p>
+            <a href="{% url 'pacientes' %}" class="btn btn-nl-primary">Ir para pacientes</a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
 
+{% endblock %}

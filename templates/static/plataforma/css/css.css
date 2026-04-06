@@ -1,70 +1,20 @@
-.card-lateral{
+/* Compatibilidade + ajustes locais (tema principal em css/theme.css) */
 
-    background-color: #27DB8F;
-    margin-top: 20px;
-    padding: 10px;
-    color: white;
-    font-weight: bold;
-    text-decoration: none;
-    text-align: center;
-    box-shadow: 5px 5px 5px gray;
-
+.titulo {
+    color: var(--nl-primary, #0d9488);
+    font-weight: 700;
 }
 
-.link-lateral:hover{
+.link-hover:hover {
     text-decoration: none;
 }
 
-.card-lateral-sair {
-    background-color: #1a9e6e;
-    margin-top: 32px;
+.descricao {
+    margin-left: 0;
 }
 
-.link-sair:hover .card-lateral-sair {
-    background-color: #158a5f;
-}
-
-.titulo{
-
-    color: #27DB8F;
-
-}
-
-.card-paciente{
-
-    background-color: #EAEAEA;
-    width: 80%;
-    box-shadow: 3px 3px 3px gray;
-    padding: 20px;
-    color: black;
-
-}
-
-.link-hover:hover{
-    text-decoration: none;
-}
-
-.foto-perfil{
-    text-align: center;
-}
-
-.dados{
-    font-weight: bold;
-}
-
-.descricao{
-
-    margin-left: -12%;
-
-}
-
-@media (max-width: 1300px)
-{
-
-    .descricao{
-
-        margin-left: 1px;
-    
+@media (max-width: 1300px) {
+    .descricao {
+        margin-left: 0;
     }
-
 }

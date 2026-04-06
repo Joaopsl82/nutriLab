@@ -26,6 +26,10 @@
         display: block !important;
     }
 
+    .print-only.d-flex {
+        display: flex !important;
+    }
+
     .fundo-alimentar {
         background: #f5f5f5 !important;
         -webkit-print-color-adjust: exact;

@@ -2,63 +2,43 @@
 {% load static %}
 
 {% block 'head' %}
-    <link rel="stylesheet" href="{% static 'autenticacao/css/css.css' %}">
 {% endblock %}
 
-{% block 'titulo' %}Cadastre-se{% endblock %}
+{% block 'titulo' %}Entrar · NutriLab{% endblock %}
 
 {% block 'body' %}
-    <div class="container-fluid">
-        
-        <div class="row">
-            <div class="col-md-3 sidebar">
-                <div class="logo_sidebar">
-                    
-                    <h2 class="logo">
-                        <img class="img_logo_sidebar" src="{% static 'autenticacao/img/logo_nutri_lab.png' %}">
-                    </h2>
-
-                </div>
-
-                
-            </div>
-
-            <div class="col-md-9">
-                <div class="area_cadastrar">
-                    {% if messages %}
-                        <br>
-                        {% for message in messages %}
-                            <div class="alert {{message.tags}}">
-                                {{message}}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                    <h2 class="titulo">Seja bem vindo</h2>
-                    <p class="sub-titulo">Entre com sua conta</p>
-                    <hr>
-                    
-                    <form action="{% url 'logar' %}" method="POST">{% csrf_token %}
-                        <span class="bold">Nome de usuário</span>
-                        <input class="form-control input-form" name="usuario" type="text" placeholder="Digite seu nome...">
-                        <br>
-                        <span class="bold">Senha</span>
-                        <input class="form-control input-form" name="senha" type="password" placeholder="Digite sua senha...">
-                        <br>
-                        <button class="btn-first">Logar</button>
-
-                    </form>
-
-                    <h3 style="position: absolute; bottom: 65px; font-weight: bold">Não tem uma conta ?&nbsp <a href="{% url 'cadastro' %}"class="btn btn-outline-success btn-lg">Registre-se</a> </h3>
-                </div>
-
-            </div>
-
-        </div>
-
-
+<div class="nl-auth-page">
+    <div class="nl-auth-brand">
+        <h2 class="logo mb-0">
+            <img class="img_logo_sidebar" src="{% static 'autenticacao/img/logo_nutri_lab.png' %}" alt="NutriLab">
+        </h2>
+        <p class="mb-0 mt-3" style="opacity:0.95; max-width:280px; position:relative; z-index:1;">
+            Gestão de pacientes e planos alimentares num só lugar.
+        </p>
     </div>
+    <div class="nl-auth-panel">
+        <div class="nl-auth-card">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {{ message.tags }} mb-3">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            <h2 class="titulo">Bem-vindo de volta</h2>
+            <p class="sub-titulo">Entre com a sua conta</p>
 
+            <form action="{% url 'logar' %}" method="POST">{% csrf_token %}
+                <span class="bold">Nome de utilizador</span>
+                <input class="form-control input-form" name="usuario" type="text" placeholder="O seu nome de utilizador" required autocomplete="username">
+                <span class="bold d-block mt-3">Palavra-passe</span>
+                <input class="form-control input-form" name="senha" type="password" placeholder="••••••••" required autocomplete="current-password">
+                <button type="submit" class="btn-first">Entrar</button>
+            </form>
 
-
-
+            <div class="nl-auth-footer">
+                Não tem conta?
+                <a href="{% url 'cadastro' %}" style="color: var(--nl-primary); font-weight: 600;">Criar registo</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

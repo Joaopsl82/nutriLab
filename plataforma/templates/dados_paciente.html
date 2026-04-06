@@ -1,238 +1,231 @@
 {% extends 'base_plataforma.html' %}
 {% load static %}
+{% load paciente_tags %}
 
 {% block 'plataforma' %}
 
-    {% if messages %}
-        <br>
-        {% for message in messages %}
-            <div class="alert {{message.tags}}">
-                {{message}}
-            </div>
-        {% endfor %}
-    {% endif %}
-    <br>
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {{ message.tags }} mb-2">{{ message }}</div>
+    {% endfor %}
+{% endif %}
 
-    <div class="row">
-
-        <div class="col-md-3">
-            {% if paciente.sexo == "M"%}
-                <img src="{% static 'plataforma/img/perfil2.png' %}">
-            {% else %}
-                <img src="{% static 'plataforma/img/perfil1.png' %}">
-            {% endif %}
-        </div>
-
-        <div class="col-md-3 dados descricao">
-            <h4>{{paciente.nome}}</h4>
-            <h6>{{paciente.idade}} Anos</h6>
-        </div>
-        
+<div class="row align-items-center no-print mb-4 flex-column flex-sm-row text-center text-sm-left">
+    <div class="col-auto mb-3 mb-sm-0">
+        {% paciente_avatar paciente 100 %}
     </div>
-    <hr>
+    <div class="col dados descricao px-0 px-sm-3">
+        <h1 class="nl-page-title mb-1">{{ paciente.nome }}</h1>
+        <p class="nl-page-sub mb-0">{{ paciente.idade }} anos · {{ paciente.email }}</p>
+    </div>
+</div>
+<hr class="no-print">
 
+<div class="row no-print mb-4">
+    <div class="col-12 col-lg-7 mb-3 mb-lg-0">
+        <div class="nl-card-paciente p-3 h-100">
+            <h6 class="text-muted text-uppercase small font-weight-bold mb-2">Meta de peso</h6>
+            {% if paciente.peso_meta %}
+            <p class="mb-1">Meta: <strong>{{ paciente.peso_meta }} kg</strong></p>
+            {% if ultimo_dado and diff_meta is not None %}
+            <p class="small mb-3 nl-diff-meta {% if diff_meta > 0 %}nl-diff-meta--acima{% elif diff_meta < 0 %}nl-diff-meta--abaixo{% else %}text-muted{% endif %}">
+                Último registo: <strong>{{ ultimo_dado.peso }} kg</strong>
+                — {% if diff_meta > 0 %}{{ diff_meta|floatformat:2 }} kg acima da meta{% elif diff_meta < 0 %}{{ diff_meta|floatformat:2 }} kg abaixo da meta{% else %}na meta{% endif %}
+            </p>
+            {% else %}
+            <p class="small text-muted mb-3">Adicione medições para comparar com a meta.</p>
+            {% endif %}
+            {% else %}
+            <p class="text-muted small mb-3">Defina um peso alvo para acompanhar a evolução.</p>
+            {% endif %}
+            <form method="post" action="{% url 'paciente_peso_meta' paciente.id %}" class="d-flex flex-wrap align-items-center gap-2">{% csrf_token %}
+                <label class="sr-only" for="id-peso-meta">Peso meta (kg)</label>
+                <input type="number" step="any" name="peso_meta" id="id-peso-meta" class="form-control form-control-sm" style="max-width: 8rem;" placeholder="kg" value="{% if paciente.peso_meta %}{{ paciente.peso_meta }}{% endif %}">
+                <button type="submit" class="btn btn-sm btn-nl-primary">Guardar meta</button>
+                {% if paciente.peso_meta %}
+                <button type="submit" name="limpar_meta" value="1" class="btn btn-sm btn-nl-outline">Remover meta</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5 d-flex flex-column gap-2">
+        <a href="{% url 'dados_paciente_export_csv' paciente.id %}" class="btn btn-nl-outline btn-block">Exportar dados clínicos (CSV)</a>
+        <button type="button" class="btn btn-nl-primary btn-block" data-toggle="modal" data-target="#modal">
+            + Adicionar dados do paciente
+        </button>
+    </div>
+</div>
 
-    <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal">
-        Adicionar dados do paciente
-    </button>
-    <br>
-    <br>
-    <table class="table table-striped">
+<div class="table-responsive no-print">
+    <table class="table table-striped nl-table">
         <thead>
             <tr>
-            <th scope="col">Peso</th>
-            <th scope="col">Altura</th>
-            <th scope="col">% gordura</th>
-            <th scope="col">% músculo</th>
-            <th scope="col">Última Atualização</th>
+                <th scope="col">Peso</th>
+                <th scope="col">Altura</th>
+                <th scope="col">% gordura</th>
+                <th scope="col">% músculo</th>
+                <th scope="col">Atualização</th>
             </tr>
         </thead>
         <tbody>
-           {% for dado in dados_paciente %}
+            {% for dado in dados_paciente %}
                 <tr>
-                    <th scope="row">{{dado.peso}} Kg</th>
-                    <td>{{dado.altura}} cm</td>
-                    <td>{{dado.percentual_gordura}}%</td>
-                    <td>{{dado.percentual_musculo}}%</td>
-                    <td>{{dado.data}}</td>
+                    <th scope="row">{{ dado.peso }} kg</th>
+                    <td>{{ dado.altura }} cm</td>
+                    <td>{{ dado.percentual_gordura }}%</td>
+                    <td>{{ dado.percentual_musculo }}%</td>
+                    <td>{{ dado.data }}</td>
                 </tr>
-            {% endfor %}    
-            
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-muted text-center py-4">Nenhum registro ainda. Use o botão acima para adicionar.</td>
+                </tr>
+            {% endfor %}
         </tbody>
     </table>
+</div>
 
-<div style="width: 60%;">
-    <canvas id="myChart"></canvas>
-</div>  
+<div class="no-print nl-card-paciente p-3 p-md-4 mb-4">
+    <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Anotações de consulta</h6>
+    {% for a in anotacoes %}
+    <div class="nl-anotacao border-bottom pb-3 mb-3">
+        <p class="small text-muted mb-1">{{ a.criado_em|date:"d/m/Y H:i" }}</p>
+        <div class="mb-0">{{ a.texto|linebreaksbr }}</div>
+    </div>
+    {% empty %}
+    <p class="text-muted small mb-3">Nenhuma anotação ainda. Use o campo abaixo após cada consulta.</p>
+    {% endfor %}
+    <form method="post" action="{% url 'anotacao_adicionar' paciente.id %}">{% csrf_token %}
+        <label for="id-anotacao-texto" class="small font-weight-bold">Nova anotação</label>
+        <textarea name="texto" id="id-anotacao-texto" class="form-control mb-2" rows="3" maxlength="2000" placeholder="Objetivos, observações, próximos passos…"></textarea>
+        <button type="submit" class="btn btn-sm btn-nl-primary">Registar anotação</button>
+    </form>
+</div>
+
+<div class="no-print nl-card-paciente p-3 p-md-4 mb-4 w-100" style="max-width: 720px;">
+    <div class="nl-chart-canvas-wrap">
+        <canvas id="myChart"></canvas>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-
-    fetch("/grafico_peso/{{paciente.id}}/").then(function(result){
-        return result.json()
-    }).then(function(data_paciente){
-       
+    fetch("/grafico_peso/{{ paciente.id }}/").then(function (result) {
+        return result.json();
+    }).then(function (data_paciente) {
+        const primary = "13, 148, 136";
         const data = {
-            labels: data_paciente['labels'],
+            labels: data_paciente["labels"],
             datasets: [{
-            label: 'Peso paciente',
-            backgroundColor: 'rgb(255, 99, 132)',
-            borderColor: 'rgb(255, 99, 132)',
-            data: data_paciente['peso'],
+                label: "Peso (kg)",
+                backgroundColor: "rgba(" + primary + ", 0.2)",
+                borderColor: "rgb(" + primary + ")",
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                data: data_paciente["peso"],
             }]
         };
-
+        const el = document.getElementById("myChart");
+        if (!el) return;
         const config = {
-            type: 'line',
+            type: "line",
             data: data,
-            options: {}
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true } }
+            }
         };
-
-        const myChart = new Chart(
-            document.getElementById('myChart'),
-            config
-        );
-
-
-    })
-
+        new Chart(el, config);
+    });
 </script>
-    
-<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                
-                <div class="modal-body">
-                    <form action="{% url 'dados_paciente' paciente.id %}" method="POST">{% csrf_token %}
-                        <h4 class="titulo">Dados do paciente</h4>
-                        <div class="form-row">
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Peso</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="peso">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">Kg</span>
-                                        </div>
-                                    </div>
-                                                            
-                            </div>
 
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Altura</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="altura">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">cm</span>
-                                        </div>
-                                    </div>
-                                                            
+<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered nl-modal-responsive" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title titulo mb-0">Novos dados</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'dados_paciente' paciente.id %}" method="POST">{% csrf_token %}
+                    <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Medidas</h6>
+                    <div class="form-row">
+                        <div class="col-md-6 mb-3">
+                            <label>Peso</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="peso" placeholder="0" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">kg</span>
+                                </div>
                             </div>
-
-                            
                         </div>
-                        <br>
-                        <div class="form-row">
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Percentual de gordura</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="gordura">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">%</span>
-                                        </div>
-                                    </div>
-                                                            
+                        <div class="col-md-6 mb-3">
+                            <label>Altura</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="altura" placeholder="0" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">cm</span>
+                                </div>
                             </div>
-
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Percentual de músculo</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="musculo">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">%</span>
-                                        </div>
-                                    </div>
-                                                            
-                            </div>
-
-                            
                         </div>
-                        <br>
-                        <h4 class="titulo">Dados laboratoriais</h4>
-                        <div class="form-row">
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Colesterol HDL</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="hdl">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">mg/dL</span>
-                                        </div>
-                                    </div>
-                                                            
+                        <div class="col-md-6 mb-3">
+                            <label>% gordura</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="gordura" required>
+                                <div class="input-group-append"><span class="input-group-text">%</span></div>
                             </div>
-
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Colesterol LDL</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="ldl">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">mg/dL</span>
-                                        </div>
-                                    </div>
-                                                            
-                            </div>
-
-                            
                         </div>
-                        <br>
-                        <div class="form-row">
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Colesterol total</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="ctotal">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">mg/dL</span>
-                                        </div>
-                                    </div>
-                                                            
+                        <div class="col-md-6 mb-3">
+                            <label>% músculo</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="musculo" required>
+                                <div class="input-group-append"><span class="input-group-text">%</span></div>
                             </div>
-
-                            <div class='col-md'>
-                            
-                                    <label for="validationServerUsername">Triglicerídios</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" placeholder="--" name="triglicerídios">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text" id="inputGroupPrepend3">mg/dL</span>
-                                        </div>
-                                    </div>
-                                                            
-                            </div>
-
-                            
                         </div>
-
-                        <br>
-
-                        <input type="submit" value="Cadastrar" class="btn btn-success">
-
-                    </form>
-                </div>
-            
+                    </div>
+                    <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Laboratorial</h6>
+                    <div class="form-row">
+                        <div class="col-md-6 mb-3">
+                            <label>Colesterol HDL</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="hdl" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Colesterol LDL</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="ldl" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Colesterol total</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="ctotal" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Triglicerídios</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="triglicerídios" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-nl-outline" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-nl-primary">Salvar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-        
-{% endblock%}
+</div>
+
+{% endblock %}

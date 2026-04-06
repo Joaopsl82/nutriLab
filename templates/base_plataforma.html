@@ -1,64 +1,39 @@
 {% extends 'base.html' %}
-{% load static  %}
+{% load static %}
 
 {% block 'head' %}
-
     <link rel="stylesheet" href="{% static 'plataforma/css/css.css' %}">
     <link rel="stylesheet" href="{% static 'plataforma/css/plataforma_print.css' %}">
     <link rel="stylesheet" href="{% static 'plataforma/css/plano_alimentar.css' %}">
-
 {% endblock %}
 
 {% block 'body' %}
-    <div class="container-fluid">
+    <div class="container-fluid py-2 py-md-3 px-2 px-sm-3 px-md-4">
         <div class="row">
-            <div class="col-md-2 sidebar-plataforma no-print">
-                <a href="{% url 'pacientes' %}" class="link-lateral">
-                    <div class="card-lateral">
-                        <img src="{% static 'plataforma/img/paciente.png' %}">
-                        <br>
-                        <br>
-
-                        <h3>Gerenciar Pacientes</h3>
-                    </div>
-                </a>
-
-                <a href="{% url 'dados_paciente_listar' %}" class="link-lateral">
-                    <div class="card-lateral">
-                        <img src="{% static 'plataforma/img/dados_paciente.png' %}">
-                        <br>
-                        <br>
-
-                        <h3>Dados do Pacientes</h3>
-                    </div>
-                </a>
-
-                <a href="{% url 'plano_alimentar_listar' %}" class="link-lateral">
-                    <div class="card-lateral">
-                        <img src="{% static 'plataforma/img/plano_alimentar.png' %}">
-                        <br>
-                        <br>
-
-                        <h3>Plano alimentar</h3>
-                    </div>
-                </a>
-
-                <a href="{% url 'sair' %}" class="link-lateral link-sair">
-                    <div class="card-lateral card-lateral-sair">
-                        <h3>Sair</h3>
-                        <p class="mb-0 small">Trocar de usuário</p>
-                    </div>
-                </a>
-
+            <div class="col-12 col-md-3 col-lg-2 sidebar-plataforma no-print nl-sidebar-wrap mb-3 mb-md-0">
+                <nav class="nl-sidebar" aria-label="Menu principal">
+                    <a href="{% url 'pacientes' %}" class="nl-nav-link">
+                        <img src="{% static 'plataforma/img/paciente.png' %}" alt="">
+                        <span>Pacientes</span>
+                    </a>
+                    <a href="{% url 'dados_paciente_listar' %}" class="nl-nav-link">
+                        <img src="{% static 'plataforma/img/dados_paciente.png' %}" alt="">
+                        <span>Dados clínicos</span>
+                    </a>
+                    <a href="{% url 'plano_alimentar_listar' %}" class="nl-nav-link">
+                        <img src="{% static 'plataforma/img/plano_alimentar.png' %}" alt="">
+                        <span>Plano alimentar</span>
+                    </a>
+                    <a href="{% url 'sair' %}" class="nl-nav-link nl-nav-sair">
+                        <span style="font-size:1.25rem;line-height:1;">&#8594;</span>
+                        <span>Sair</span>
+                    </a>
+                </nav>
             </div>
 
-            <div class="col-md-8 conteudo-plataforma">
-                {% block 'plataforma' %}
-
-
-                {% endblock %}
+            <div class="col-12 col-md-9 col-lg-10 conteudo-plataforma nl-main">
+                {% block 'plataforma' %}{% endblock %}
             </div>
-
         </div>
     </div>
-{% endblock%}
+{% endblock %}

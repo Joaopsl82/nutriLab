@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 from django.http import Http404
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
-from .models import DadosPaciente, Pacientes, Refeicao
+from .models import AnotacaoPaciente, DadosPaciente, Pacientes, Refeicao
 from .views import grafico_peso, opcao
 
 
@@ -129,3 +130,118 @@ class PlataformaViewsTests(TestCase):
         req.user = self.nutri
         with self.assertRaises(Http404):
             opcao(req, id_paciente=str(self.paciente.id))
+
+    def test_paciente_excluir_remove_registo(self):
+        self.client.login(username='nutri1', password='Senha123')
+        pk = self.paciente.pk
+        url = reverse('paciente_excluir', kwargs={'id': pk})
+        r = self.client.post(url)
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(Pacientes.objects.filter(pk=pk).exists())
+
+    def test_paciente_excluir_outro_nutricionista_404(self):
+        self.client.login(username='nutri2', password='Senha123')
+        url = reverse('paciente_excluir', kwargs={'id': self.paciente.id})
+        r = self.client.post(url)
+        self.assertEqual(r.status_code, 404)
+
+    def test_paciente_editar_atualiza_dados(self):
+        self.client.login(username='nutri1', password='Senha123')
+        url = reverse('paciente_editar', kwargs={'id': self.paciente.id})
+        r = self.client.post(
+            url,
+            {
+                'nome': 'Nome Atualizado',
+                'sexo': 'F',
+                'idade': '31',
+                'email': 'p@test.com',
+                'telefone': '11777777777',
+                'situacao': 'pausa',
+            },
+        )
+        self.assertEqual(r.status_code, 302)
+        self.paciente.refresh_from_db()
+        self.assertEqual(self.paciente.nome, 'Nome Atualizado')
+        self.assertEqual(self.paciente.sexo, 'F')
+        self.assertEqual(self.paciente.idade, 31)
+        self.assertEqual(self.paciente.situacao, 'pausa')
+
+    def test_paciente_editar_email_duplicado(self):
+        Pacientes.objects.create(
+            nome='Outro',
+            sexo='F',
+            idade=20,
+            email='outro@test.com',
+            telefone='11666666666',
+            nutri=self.nutri,
+        )
+        self.client.login(username='nutri1', password='Senha123')
+        url = reverse('paciente_editar', kwargs={'id': self.paciente.id})
+        r = self.client.post(
+            url,
+            {
+                'nome': self.paciente.nome,
+                'sexo': 'M',
+                'idade': '30',
+                'email': 'outro@test.com',
+                'telefone': self.paciente.telefone,
+            },
+        )
+        self.assertEqual(r.status_code, 302)
+        self.paciente.refresh_from_db()
+        self.assertEqual(self.paciente.email, 'p@test.com')
+
+    def test_pacientes_filtra_por_pesquisa(self):
+        self.client.login(username='nutri1', password='Senha123')
+        Pacientes.objects.create(
+            nome='Outro Nome',
+            sexo='F',
+            idade=20,
+            email='unico@test.com',
+            telefone='11555555555',
+            nutri=self.nutri,
+        )
+        r = self.client.get(reverse('pacientes'), {'q': 'unico'})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'unico@test.com')
+        self.assertNotContains(r, 'p@test.com')
+
+    def test_export_csv_dados_clinicos(self):
+        self.client.login(username='nutri1', password='Senha123')
+        DadosPaciente.objects.create(
+            paciente=self.paciente,
+            data=timezone.now(),
+            peso=Decimal('70'),
+            altura=Decimal('170'),
+            percentual_gordura=Decimal('10'),
+            percentual_musculo=Decimal('20'),
+            colesterol_hdl=Decimal('40'),
+            colesterol_ldl=Decimal('50'),
+            colesterol_total=Decimal('100'),
+            trigliceridios=Decimal('80'),
+        )
+        url = reverse('dados_paciente_export_csv', kwargs={'id': self.paciente.id})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('text/csv', r['Content-Type'])
+        body = r.content.decode('utf-8-sig')
+        self.assertIn('Peso_kg', body)
+        self.assertIn('70', body)
+
+    def test_anotacao_adicionar(self):
+        self.client.login(username='nutri1', password='Senha123')
+        url = reverse('anotacao_adicionar', kwargs={'id': self.paciente.id})
+        self.client.post(url, {'texto': '  Observação da consulta  '})
+        self.assertTrue(
+            AnotacaoPaciente.objects.filter(
+                paciente=self.paciente,
+                texto='Observação da consulta',
+            ).exists()
+        )
+
+    def test_peso_meta_atualiza(self):
+        self.client.login(username='nutri1', password='Senha123')
+        url = reverse('paciente_peso_meta', kwargs={'id': self.paciente.id})
+        self.client.post(url, {'peso_meta': '68,5'})
+        self.paciente.refresh_from_db()
+        self.assertEqual(self.paciente.peso_meta, Decimal('68.5'))

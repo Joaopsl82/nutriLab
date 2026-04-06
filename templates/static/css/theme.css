@@ -1,0 +1,743 @@
+/* NutriLab — tema moderno */
+:root {
+  --nl-primary: #0d9488;
+  --nl-primary-hover: #0f766e;
+  --nl-primary-soft: rgba(13, 148, 136, 0.12);
+  --nl-accent: #14b8a6;
+  --nl-bg: #f0f4f8;
+  --nl-surface: #ffffff;
+  --nl-text: #0f172a;
+  --nl-text-muted: #64748b;
+  --nl-border: #e2e8f0;
+  --nl-radius: 14px;
+  --nl-radius-sm: 10px;
+  --nl-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --nl-shadow-lg: 0 4px 6px rgba(15, 23, 42, 0.04), 0 20px 48px rgba(15, 23, 42, 0.08);
+  --nl-font: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--nl-font);
+  color: var(--nl-text);
+  background: var(--nl-bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ——— Navbar ——— */
+.nl-navbar {
+  background: var(--nl-surface) !important;
+  border-bottom: 1px solid var(--nl-border);
+  box-shadow: var(--nl-shadow);
+  padding: 0.65rem 0;
+}
+
+.nl-navbar .navbar-brand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: var(--nl-text) !important;
+  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nl-navbar .navbar-brand::after {
+  content: "";
+  display: block;
+  height: 3px;
+  width: 2.5rem;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--nl-primary), var(--nl-accent));
+  -webkit-text-fill-color: initial;
+}
+
+/* ——— Plataforma: sidebar ——— */
+.nl-sidebar {
+  background: var(--nl-surface);
+  border-radius: var(--nl-radius);
+  padding: 1rem 0.75rem;
+  box-shadow: var(--nl-shadow);
+  border: 1px solid var(--nl-border);
+  height: fit-content;
+  position: sticky;
+  top: 1rem;
+}
+
+.nl-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.35rem;
+  border-radius: var(--nl-radius-sm);
+  color: var(--nl-text);
+  text-decoration: none !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.nl-nav-link:hover {
+  background: var(--nl-primary-soft);
+  color: var(--nl-primary);
+  transform: translateX(2px);
+}
+
+.nl-nav-link img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+.nl-nav-link.nl-nav-link--active {
+  background: var(--nl-primary-soft);
+  color: var(--nl-primary);
+}
+
+.nl-nav-link.nl-nav-sair {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--nl-border);
+  color: var(--nl-text-muted);
+}
+
+.nl-nav-link.nl-nav-sair:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.nl-main {
+  padding-left: 1.5rem;
+  padding-bottom: 3rem;
+  min-width: 0; /* evita overflow horizontal em flex/grid */
+}
+
+/* ——— Títulos de página ——— */
+.nl-page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--nl-text);
+  margin-bottom: 0.25rem;
+}
+
+.nl-page-sub {
+  color: var(--nl-text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ——— Botões ——— */
+.btn-nl-primary {
+  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent)) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: var(--nl-radius-sm) !important;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-nl-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+  color: #fff !important;
+}
+
+.btn-nl-outline {
+  border: 2px solid var(--nl-border) !important;
+  color: var(--nl-text) !important;
+  font-weight: 600;
+  border-radius: var(--nl-radius-sm) !important;
+  background: var(--nl-surface) !important;
+}
+
+.btn-nl-outline:hover {
+  border-color: var(--nl-primary) !important;
+  color: var(--nl-primary) !important;
+}
+
+/* ——— Cards paciente ——— */
+.nl-card-paciente {
+  background: var(--nl-surface);
+  border-radius: var(--nl-radius);
+  border: 1px solid var(--nl-border);
+  box-shadow: var(--nl-shadow);
+  padding: 1.5rem;
+  height: 100%;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  text-decoration: none !important;
+  color: inherit !important;
+  display: block;
+}
+
+.nl-card-paciente:hover {
+  box-shadow: var(--nl-shadow-lg);
+  transform: translateY(-3px);
+  border-color: rgba(13, 148, 136, 0.35);
+}
+
+.nl-card-paciente .foto-perfil {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.nl-card-paciente .dados {
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+  color: var(--nl-text-muted);
+}
+
+.nl-card-paciente .dados strong {
+  color: var(--nl-text);
+}
+
+.nl-card-paciente .nome-destaque {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--nl-text);
+  margin-bottom: 0.5rem;
+}
+
+.nl-card-paciente.nl-card-paciente--wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.nl-card-paciente-link {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.nl-card-paciente-link:hover .nome-destaque {
+  color: var(--nl-primary);
+}
+
+.nl-card-paciente-actions {
+  border-color: var(--nl-border) !important;
+  position: relative;
+  z-index: 2;
+}
+
+.nl-card-paciente-actions .btn {
+  position: relative;
+  z-index: 3;
+}
+
+/* ——— Avatar ——— */
+.paciente-avatar-wrap {
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--nl-bg);
+  border: 3px solid var(--nl-surface);
+  box-shadow: var(--nl-shadow);
+}
+
+.paciente-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ——— Tabelas ——— */
+.table.nl-table {
+  background: var(--nl-surface);
+  border-radius: var(--nl-radius-sm);
+  overflow: hidden;
+  box-shadow: var(--nl-shadow);
+}
+
+.table.nl-table thead th {
+  border-bottom-width: 1px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nl-text-muted);
+  background: #f8fafc;
+}
+
+/* ——— Alerts ——— */
+.alert {
+  border-radius: var(--nl-radius-sm) !important;
+  border: none !important;
+}
+
+/* ——— Modais ——— */
+.modal-content {
+  border: none !important;
+  border-radius: var(--nl-radius) !important;
+  box-shadow: var(--nl-shadow-lg) !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--nl-border) !important;
+}
+
+.modal-title.titulo {
+  color: var(--nl-primary);
+  font-weight: 700;
+}
+
+.form-control {
+  border-radius: var(--nl-radius-sm) !important;
+  border-color: var(--nl-border) !important;
+  padding: 0.55rem 0.85rem;
+}
+
+.form-control:focus {
+  border-color: var(--nl-primary) !important;
+  box-shadow: 0 0 0 3px var(--nl-primary-soft) !important;
+}
+
+/* ——— Auth (login / cadastro) ——— */
+.nl-auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+}
+
+.nl-auth-brand {
+  flex: 0 0 38%;
+  max-width: 420px;
+  background: linear-gradient(160deg, #0f766e 0%, #0d9488 40%, #2dd4bf 100%);
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.nl-auth-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.9;
+}
+
+.nl-auth-brand .img_logo_sidebar {
+  max-width: 200px;
+  width: 80%;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
+}
+
+.nl-auth-brand h2 {
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.nl-auth-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.nl-auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--nl-surface);
+  padding: 2.5rem;
+  border-radius: var(--nl-radius);
+  box-shadow: var(--nl-shadow-lg);
+  border: 1px solid var(--nl-border);
+}
+
+.nl-auth-card .titulo {
+  font-weight: 700;
+  font-size: 1.65rem;
+  color: var(--nl-text);
+  margin-bottom: 0.25rem;
+}
+
+.nl-auth-card .sub-titulo {
+  color: var(--nl-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.nl-auth-card .input-form {
+  margin-top: 0.35rem;
+  border-radius: var(--nl-radius-sm) !important;
+}
+
+.nl-auth-card .btn-first {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  border-radius: var(--nl-radius-sm);
+  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent));
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+  transition: transform 0.15s ease;
+}
+
+.nl-auth-card .btn-first:hover {
+  transform: translateY(-1px);
+  color: #fff;
+}
+
+.nl-auth-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--nl-border);
+  font-size: 0.95rem;
+  color: var(--nl-text-muted);
+}
+
+.nl-auth-footer a {
+  font-weight: 600;
+}
+
+@media (max-width: 991px) {
+  .nl-auth-page {
+    flex-direction: column;
+  }
+  .nl-auth-brand {
+    flex: none;
+    max-width: none;
+    min-height: 220px;
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* ——— Plano alimentar (área cinza) ——— */
+.fundo-alimentar {
+  background: linear-gradient(180deg, #e8eef4 0%, #e2e8f0 100%) !important;
+  border-radius: var(--nl-radius) !important;
+  border: 1px solid var(--nl-border) !important;
+}
+
+.refeicao {
+  border-radius: var(--nl-radius-sm) !important;
+  overflow: hidden;
+  border: 1px solid var(--nl-border);
+}
+
+.head-refeicao {
+  background: linear-gradient(90deg, #475569, #64748b) !important;
+  color: #fff !important;
+}
+
+.body-refeicao {
+  background: var(--nl-surface) !important;
+}
+
+.opcao {
+  background: #f1f5f9 !important;
+  border-radius: var(--nl-radius-sm) !important;
+  border: 1px solid var(--nl-border);
+}
+
+/* Bootstrap 4 não define utilitários gap — usados nos templates */
+.d-flex.gap-1,
+.d-inline-flex.gap-1 { gap: 0.25rem !important; }
+.d-flex.gap-2,
+.d-inline-flex.gap-2 { gap: 0.5rem !important; }
+.d-flex.gap-3,
+.d-inline-flex.gap-3 { gap: 1rem !important; }
+
+/* ===== Responsividade (tablet e mobile) ===== */
+@media (max-width: 991.98px) {
+  .nl-main {
+    padding-left: 0;
+    padding-top: 0.25rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  html {
+    font-size: 15px;
+  }
+
+  .nl-page-title {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  .nl-page-sub {
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+  }
+
+  .nl-main {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: 4rem;
+  }
+
+  .nl-sidebar-wrap {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .nl-sidebar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.45rem;
+    padding: 0.6rem 0.65rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    position: static;
+    border-radius: var(--nl-radius-sm);
+  }
+
+  .nl-sidebar::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .nl-sidebar::-webkit-scrollbar-thumb {
+    background: var(--nl-border);
+    border-radius: 4px;
+  }
+
+  .nl-nav-link {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 5.1rem;
+    max-width: 6.25rem;
+    padding: 0.55rem 0.4rem;
+    margin-bottom: 0;
+    font-size: 0.68rem;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .nl-nav-link span {
+    word-break: break-word;
+  }
+
+  .nl-nav-link.nl-nav-sair {
+    margin-top: 0;
+    padding-top: 0.55rem;
+    border-top: none;
+    border-left: 1px solid var(--nl-border);
+    margin-left: 0.15rem;
+    padding-left: 0.65rem;
+    min-width: 4.25rem;
+  }
+
+  .nl-nav-link img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nl-card-paciente {
+    padding: 1.15rem;
+  }
+
+  .nl-card-paciente:hover {
+    transform: none;
+  }
+
+  .table.nl-table {
+    font-size: 0.8125rem;
+  }
+
+  .table.nl-table th,
+  .table.nl-table td {
+    padding: 0.5rem 0.45rem;
+    vertical-align: middle;
+  }
+
+  .table-responsive {
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .fundo-alimentar {
+    padding: 1rem !important;
+  }
+
+  .head-refeicao,
+  .body-refeicao {
+    padding: 1rem 1.1rem !important;
+  }
+
+  .head-refeicao {
+    font-size: 0.95rem;
+  }
+
+  .opcao {
+    padding: 0.75rem !important;
+  }
+
+  .nl-navbar .navbar-brand {
+    font-size: 1.02rem;
+  }
+
+  .nl-navbar .container-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .nl-page-title {
+    font-size: 1.28rem;
+  }
+
+  .nl-auth-card {
+    padding: 1.35rem 1.15rem !important;
+  }
+
+  .nl-auth-card .titulo {
+    font-size: 1.35rem;
+  }
+
+  .nl-auth-brand {
+    min-height: 180px;
+    padding: 1.5rem 1rem !important;
+  }
+
+  /* Cabeçalhos com botão: empilhar em ecrãs estreitos */
+  .nl-toolbar-page {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .nl-toolbar-page > div:first-child {
+    margin-bottom: 0.5rem;
+  }
+
+  .nl-toolbar-page .btn {
+    width: 100%;
+  }
+
+  .nl-card-paciente-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nl-card-paciente-actions .btn,
+  .nl-card-paciente-actions form {
+    width: 100%;
+  }
+
+  .nl-card-paciente-actions form .btn {
+    width: 100%;
+  }
+
+  /* Modais quase ecrã inteiro em telemóvel */
+  .modal-dialog.nl-modal-responsive {
+    margin: 0.35rem auto;
+    max-width: calc(100% - 0.7rem);
+    width: calc(100% - 0.7rem);
+  }
+
+  .modal-dialog.nl-modal-responsive.modal-lg {
+    max-width: calc(100% - 0.7rem);
+  }
+
+  .modal-body {
+    max-height: calc(100vh - 11rem);
+    max-height: calc(100dvh - 11rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .plano-botoes-acoes {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .plano-botoes-acoes .btn {
+    width: 100%;
+  }
+}
+
+/* Gráfico de peso: altura controlada para não estourar em mobile */
+.nl-chart-canvas-wrap {
+  position: relative;
+  height: 240px;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 575.98px) {
+  .nl-chart-canvas-wrap {
+    height: 200px;
+  }
+}
+
+/* Imagens das opções do plano: limite em ecrãs estreitos */
+@media (max-width: 767.98px) {
+  .nl-opcao-img {
+    max-height: 200px;
+    width: auto;
+    object-fit: cover;
+  }
+}
+
+/* Situação do paciente (lista) */
+.nl-badge-situacao {
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.35em 0.55em;
+}
+
+.nl-badge-situacao--ativo {
+  color: #0f766e;
+  background: rgba(13, 148, 136, 0.15);
+}
+
+.nl-badge-situacao--pausa {
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.nl-badge-situacao--alta {
+  color: #1e40af;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.nl-diff-meta--acima {
+  color: #b45309;
+}
+
+.nl-diff-meta--abaixo {
+  color: #0f766e;
+}
+
+/* Toque: não exagerar no hover em dispositivos sem hover */
+@media (hover: none) {
+  .nl-card-paciente:active {
+    border-color: rgba(13, 148, 136, 0.45);
+  }
+}

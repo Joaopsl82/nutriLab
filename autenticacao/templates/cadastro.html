@@ -2,77 +2,53 @@
 {% load static %}
 
 {% block 'head' %}
+{% endblock %}
 
-    <link rel="stylesheet" href="{% static 'autenticacao/css/css.css' %}"
-
-{% endblock  %}
-
-{% block 'titulo' %}Cadastre-se{% endblock %}
+{% block 'titulo' %}Registo · NutriLab{% endblock %}
 
 {% block 'body' %}
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-3 sidebar">
-                <div class="logo_sidebar">
-                    
-                    <h2 class="logo">
-                        <img class="img_logo_sidebar" src="{% static 'autenticacao/img/logo_nutri_lab.png' %}">
-                    </h2>
-
-                </div>
-
-                
-            </div>
-
-            <div class="col-md-9">
-                <div class="area_cadastrar">
-                    
-                    <h2 class="titulo">Seja bem vindo</h2>
-                    <p class="sub-titulo">Crie sua conta</p>
-                    <hr>
-                    
-                    <form action="{% url 'cadastro' %}" method="POST">{% csrf_token %}
-                        <span class="bold">Nome de usuário</span>
-                        <input class="form-control input-form" name="usuario" type="text" placeholder="Digite seu nome...">
-                        <br>
-                        <span class="bold">E-mail</span>
-                        <input class="form-control input-form" name="email" type="text" placeholder="Digite seu E-mail...">
-                        <br>
-                        <div class="row">
-                            <div class="col-md">
-                                <span class="bold">Senha</span>
-                                <input class="form-control input-form" name="senha" type="password" placeholder="Digite sua senha...">
-                            </div>
-
-                            <div class="col-md">
-                                <span class="bold">Confirmar senha</span>
-                                <input class="form-control input-form" name="confirmar_senha" type="password" placeholder="Confirme sua senha...">
-                            </div>
-                        </div>
-                        <br>
-                        {% if messages %}
-                        <br>
-                            {% for message in messages %}
-                                <div class="alert {{message.tags}}">
-                                    {{message}}
-                                </div>
-                            {% endfor %}
-                         {% endif %}
-                        <button class="btn-first">Registrar</button>
-
-                    </form>
-
-                    <h3 style="position: absolute; bottom: 65px; font-weight: bold">Já possui uma conta ?&nbsp <a href="{% url 'logar' %}" class="btn btn-outline-success btn-lg">Logar</a> </h3>
-                </div>
-
-            </div>
-
-        </div>
-
-
+<div class="nl-auth-page">
+    <div class="nl-auth-brand">
+        <h2 class="logo mb-0">
+            <img class="img_logo_sidebar" src="{% static 'autenticacao/img/logo_nutri_lab.png' %}" alt="NutriLab">
+        </h2>
+        <p class="mb-0 mt-3" style="opacity:0.95; max-width:280px; position:relative; z-index:1;">
+            Crie a sua conta e comece a acompanhar os seus pacientes.
+        </p>
     </div>
+    <div class="nl-auth-panel">
+        <div class="nl-auth-card">
+            <h2 class="titulo">Criar conta</h2>
+            <p class="sub-titulo">Preencha os dados abaixo</p>
 
+            <form action="{% url 'cadastro' %}" method="POST">{% csrf_token %}
+                <span class="bold">Nome de utilizador</span>
+                <input class="form-control input-form" name="usuario" type="text" placeholder="Escolha um nome de utilizador" required autocomplete="username">
+                <span class="bold d-block mt-3">E-mail</span>
+                <input class="form-control input-form" name="email" type="email" placeholder="seu@email.com" required autocomplete="email">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <span class="bold">Palavra-passe</span>
+                        <input class="form-control input-form" name="senha" type="password" placeholder="Mín. 6 caracteres" required autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6 mt-3 mt-md-0">
+                        <span class="bold">Confirmar</span>
+                        <input class="form-control input-form" name="confirmar_senha" type="password" placeholder="Repita a palavra-passe" required autocomplete="new-password">
+                    </div>
+                </div>
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert {{ message.tags }} mt-3 mb-0">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                <button type="submit" class="btn-first">Registar</button>
+            </form>
 
-
-
+            <div class="nl-auth-footer">
+                Já tem conta?
+                <a href="{% url 'logar' %}" style="color: var(--nl-primary); font-weight: 600;">Entrar</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
