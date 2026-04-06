@@ -1,0 +1,42 @@
+/* Esconde elementos na impressão / exportação PDF (atalho do browser) */
+@media print {
+    .no-print,
+    .sidebar-plataforma,
+    nav.navbar {
+        display: none !important;
+    }
+
+    body {
+        background: #fff !important;
+    }
+
+    .container-fluid .row {
+        display: block !important;
+    }
+
+    .conteudo-plataforma {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+
+    .fundo-alimentar {
+        background: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    a[href]:after {
+        content: none !important;
+    }
+}
+
+.print-only {
+    display: none;
+}

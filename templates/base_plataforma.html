@@ -4,6 +4,7 @@
 {% block 'head' %}
 
     <link rel="stylesheet" href="{% static 'plataforma/css/css.css' %}">
+    <link rel="stylesheet" href="{% static 'plataforma/css/plataforma_print.css' %}">
     <link rel="stylesheet" href="{% static 'plataforma/css/plano_alimentar.css' %}">
 
 {% endblock %}
@@ -11,7 +12,7 @@
 {% block 'body' %}
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-2">
+            <div class="col-md-2 sidebar-plataforma no-print">
                 <a href="{% url 'pacientes' %}" class="link-lateral">
                     <div class="card-lateral">
                         <img src="{% static 'plataforma/img/paciente.png' %}">
@@ -42,9 +43,16 @@
                     </div>
                 </a>
 
+                <a href="{% url 'sair' %}" class="link-lateral link-sair">
+                    <div class="card-lateral card-lateral-sair">
+                        <h3>Sair</h3>
+                        <p class="mb-0 small">Trocar de usuário</p>
+                    </div>
+                </a>
+
             </div>
 
-            <div class="col-md-8">
+            <div class="col-md-8 conteudo-plataforma">
                 {% block 'plataforma' %}
 
 

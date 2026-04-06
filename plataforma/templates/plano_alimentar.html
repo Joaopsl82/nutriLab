@@ -3,6 +3,7 @@
 
 {% block 'plataforma' %}
 
+    <div class="no-print">
     {% if messages %}
         <br>
         {% for message in messages %}
@@ -12,8 +13,15 @@
         {% endfor %}
     {% endif %}
     <br>
+    </div>
 
-    <div class="row">
+    <div class="print-only">
+        <h2 class="mb-1">Plano alimentar</h2>
+        <p class="mb-0"><strong>Paciente:</strong> {{ paciente.nome }} &mdash; {{ paciente.idade }} anos</p>
+        <hr>
+    </div>
+
+    <div class="row no-print">
 
         <div class="col-md-3">
                 {% if paciente.sexo == "M"%}
@@ -29,20 +37,20 @@
         </div>
         
     </div>
-    <hr>
+    <hr class="no-print">
 
 
+    <div class="no-print mb-3">
     <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#modal">
         + Nova refeição
     </button>
 
-    <button type="button" class="btn btn-outline-primary" id='pdf'>
+    <button type="button" class="btn btn-outline-primary" id="pdf" title="Abre a janela de impressão; escolha &quot;Guardar como PDF&quot; se quiser ficheiro.">
         Exportar refeição
     </button>
-    <br>
-    <br>
+    </div>
 
-    <div class="fundo-alimentar">
+    <div class="fundo-alimentar" id="plano-alimentar-export">
         
     {% for re in refeicao %}
     <div class="refeicao">
@@ -86,7 +94,7 @@
 
 
 
-    <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade no-print" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -188,10 +196,6 @@
                             </form>
                         </div>
 
-                       
-                        
-
-                    </form>
                 </div>
             
             </div>
@@ -200,6 +204,10 @@
 
 
 <script>
+    document.getElementById('pdf').addEventListener('click', function () {
+        window.print();
+    });
+
     function exibe_refeicao(){
         const form_refeicao = document.getElementById('form-refeicao')
         const form_opcao = document.getElementById('form-opcao')

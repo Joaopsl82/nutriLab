@@ -68,9 +68,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 
-    fetch("/grafico_peso/{{paciente.id}}/",{
-        method: 'POST',
-    }).then(function(result){
+    fetch("/grafico_peso/{{paciente.id}}/").then(function(result){
         return result.json()
     }).then(function(data_paciente){
        

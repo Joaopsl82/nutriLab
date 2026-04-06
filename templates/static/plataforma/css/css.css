@@ -15,6 +15,15 @@
     text-decoration: none;
 }
 
+.card-lateral-sair {
+    background-color: #1a9e6e;
+    margin-top: 32px;
+}
+
+.link-sair:hover .card-lateral-sair {
+    background-color: #158a5f;
+}
+
 .titulo{
 
     color: #27DB8F;

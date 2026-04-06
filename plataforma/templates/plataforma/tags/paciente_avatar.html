@@ -1,0 +1,10 @@
+{% load static %}
+<div class="paciente-avatar-wrap {{ extra_class }}" style="width: {{ size }}px; height: {{ size }}px; min-width: {{ size }}px; min-height: {{ size }}px;">
+    {% if paciente.foto %}
+        <img src="{{ paciente.foto.url }}" alt="" class="paciente-avatar-img" width="{{ size }}" height="{{ size }}">
+    {% elif paciente.sexo == "M" %}
+        <img src="{% static 'plataforma/img/perfil2.png' %}" alt="" class="paciente-avatar-img" width="{{ size }}" height="{{ size }}">
+    {% else %}
+        <img src="{% static 'plataforma/img/perfil1.png' %}" alt="" class="paciente-avatar-img" width="{{ size }}" height="{{ size }}">
+    {% endif %}
+</div>
