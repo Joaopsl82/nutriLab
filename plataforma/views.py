@@ -1,5 +1,6 @@
 import csv
 
+from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -8,8 +9,24 @@ from django.contrib import messages
 from django.contrib.messages import constants
 from django.db.models import Q
 from decimal import Decimal
-from .models import Pacientes, DadosPaciente, Refeicao, Opcao, AnotacaoPaciente
+from .models import (
+    AlimentoNutricional,
+    AnotacaoPaciente,
+    DadosPaciente,
+    ItemRefeicaoAlimento,
+    Opcao,
+    Pacientes,
+    Refeicao,
+)
 from django.utils import timezone
+
+from .nutricao import (
+    TOTAIS_ZERADOS,
+    percentuais_energia_macros,
+    sincronizar_macros_refeicao_legacy,
+    somar_totais,
+    totais_refeicao_mostrados,
+)
 
 
 SITUACOES_VALIDAS = {c[0] for c in Pacientes.choices_situacao}
@@ -35,6 +52,99 @@ def _numeric_or_none(s):
         return Decimal(t)
     except Exception:
         return None
+
+
+def _int_post(s, default=0):
+    try:
+        t = str(s or '').strip().replace(',', '.')
+        if t == '':
+            return default
+        return int(float(t))
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_dados_clinicos_post(post):
+    peso = _numeric_or_none(post.get('peso'))
+    altura = _numeric_or_none(post.get('altura'))
+    gordura = _numeric_or_none(post.get('gordura'))
+    musculo = _numeric_or_none(post.get('musculo'))
+    hdl = _numeric_or_none(post.get('hdl'))
+    ldl = _numeric_or_none(post.get('ldl'))
+    colesterol_total = _numeric_or_none(post.get('ctotal'))
+    triglicer = _numeric_or_none(post.get('triglicerídios'))
+    checks = [
+        (peso, 'Digite um peso válido'),
+        (altura, 'Digite uma altura válida'),
+        (gordura, 'Digite uma gordura válida'),
+        (musculo, 'Digite um percentual de músculo válido'),
+        (hdl, 'Digite um HDL válido'),
+        (ldl, 'Digite um LDL válido'),
+        (colesterol_total, 'Digite um colesterol total válido'),
+        (triglicer, 'Digite triglicerídeos válidos'),
+    ]
+    for val, msg in checks:
+        if val is None:
+            return None, msg
+    return {
+        'peso': peso,
+        'altura': altura,
+        'percentual_gordura': gordura,
+        'percentual_musculo': musculo,
+        'colesterol_hdl': hdl,
+        'colesterol_ldl': ldl,
+        'colesterol_total': colesterol_total,
+        'trigliceridios': triglicer,
+    }, None
+
+
+def _decimal_post(s, default=None, min_val=None, max_val=None):
+    if s is None or str(s).strip() == '':
+        return default
+    t = str(s).strip().replace(',', '.')
+    try:
+        v = Decimal(t)
+    except Exception:
+        return default
+    if min_val is not None and v < min_val:
+        return default
+    if max_val is not None and v > max_val:
+        return default
+    return v
+
+
+def _alimentos_do_nutricionista(user):
+    return AlimentoNutricional.objects.filter(Q(nutri__isnull=True) | Q(nutri=user)).order_by(
+        'nome'
+    )
+
+
+def _nutri_pode_usar_alimento(user, alimento):
+    return alimento.nutri_id is None or alimento.nutri_id == user.id
+
+
+def _opcao_titulo_duplicado_na_refeicao(refeicao, titulo, excluir_pk=None):
+    """Título não vazio e igual (sem diferenciar maiúsculas) a outra opção da mesma refeição."""
+    tn = (titulo or '').strip()
+    if not tn:
+        return False
+    qs = Opcao.objects.filter(refeicao=refeicao, titulo__iexact=tn)
+    if excluir_pk is not None:
+        qs = qs.exclude(pk=excluir_pk)
+    return qs.exists()
+
+
+def _refeicao_titulo_normalizado(titulo):
+    return (titulo or '').strip()[:50] or 'Refeição'
+
+
+def _refeicao_titulo_duplicado_no_paciente(paciente, titulo, excluir_pk=None):
+    """Mesmo título (após normalização, sem diferenciar maiúsculas) noutra refeição do paciente."""
+    tn = _refeicao_titulo_normalizado(titulo)
+    qs = Refeicao.objects.filter(paciente=paciente, titulo__iexact=tn)
+    if excluir_pk is not None:
+        qs = qs.exclude(pk=excluir_pk)
+    return qs.exists()
 
 
 @login_required(login_url='/auth/logar/')
@@ -182,6 +292,37 @@ def dados_paciente(request, id):
         diff_meta = None
         if paciente.peso_meta is not None and ultimo_dado is not None:
             diff_meta = ultimo_dado.peso - paciente.peso_meta
+
+        dados_clinicos_edit_data = [
+            {
+                'id': d.id,
+                'peso': str(d.peso),
+                'altura': str(d.altura),
+                'gordura': str(d.percentual_gordura),
+                'musculo': str(d.percentual_musculo),
+                'hdl': str(d.colesterol_hdl),
+                'ldl': str(d.colesterol_ldl),
+                'ctotal': str(d.colesterol_total),
+                'triglicer': str(d.trigliceridios),
+                'edit_url': reverse(
+                    'dado_clinico_editar',
+                    kwargs={'id': paciente.id, 'dado_id': d.id},
+                ),
+            }
+            for d in dados_paciente
+        ]
+        anotacoes_edit_data = [
+            {
+                'id': a.id,
+                'texto': a.texto,
+                'edit_url': reverse(
+                    'anotacao_editar',
+                    kwargs={'id': paciente.id, 'anotacao_id': a.id},
+                ),
+            }
+            for a in anotacoes
+        ]
+
         return render(
             request,
             'dados_paciente.html',
@@ -191,51 +332,28 @@ def dados_paciente(request, id):
                 'anotacoes': anotacoes,
                 'ultimo_dado': ultimo_dado,
                 'diff_meta': diff_meta,
+                'dados_clinicos_edit_data': dados_clinicos_edit_data,
+                'anotacoes_edit_data': anotacoes_edit_data,
             },
         )
 
     if request.method == "POST":
-        peso = _numeric_or_none(request.POST.get('peso'))
-        altura = _numeric_or_none(request.POST.get('altura'))
-        gordura = _numeric_or_none(request.POST.get('gordura'))
-        musculo = _numeric_or_none(request.POST.get('musculo'))
-        hdl = _numeric_or_none(request.POST.get('hdl'))
-        ldl = _numeric_or_none(request.POST.get('ldl'))
-        colesterol_total = _numeric_or_none(request.POST.get('ctotal'))
-        triglicer = _numeric_or_none(request.POST.get('triglicerídios'))
-
-        def fail(msg):
-            messages.add_message(request, constants.ERROR, msg)
+        parsed, err = _parse_dados_clinicos_post(request.POST)
+        if err:
+            messages.add_message(request, constants.ERROR, err)
             return redirect('dados_paciente', id=paciente.id)
-
-        if peso is None:
-            return fail('Digite um peso válido')
-        if altura is None:
-            return fail('Digite uma altura válida')
-        if gordura is None:
-            return fail('Digite uma gordura válida')
-        if musculo is None:
-            return fail('Digite um percentual de músculo válido')
-        if hdl is None:
-            return fail('Digite um HDL válido')
-        if ldl is None:
-            return fail('Digite um LDL válido')
-        if colesterol_total is None:
-            return fail('Digite um colesterol total válido')
-        if triglicer is None:
-            return fail('Digite triglicerídeos válidos')
 
         DadosPaciente.objects.create(
             paciente=paciente,
             data=timezone.now(),
-            peso=peso,
-            altura=altura,
-            percentual_gordura=gordura,
-            percentual_musculo=musculo,
-            colesterol_hdl=hdl,
-            colesterol_ldl=ldl,
-            colesterol_total=colesterol_total,
-            trigliceridios=triglicer,
+            peso=parsed['peso'],
+            altura=parsed['altura'],
+            percentual_gordura=parsed['percentual_gordura'],
+            percentual_musculo=parsed['percentual_musculo'],
+            colesterol_hdl=parsed['colesterol_hdl'],
+            colesterol_ldl=parsed['colesterol_ldl'],
+            colesterol_total=parsed['colesterol_total'],
+            trigliceridios=parsed['trigliceridios'],
         )
         messages.add_message(request, constants.SUCCESS, 'Dados cadastrados com sucesso')
         return redirect('dados_paciente', id=paciente.id)
@@ -277,6 +395,79 @@ def anotacao_adicionar(request, id):
         return redirect('dados_paciente', id=paciente.id)
     AnotacaoPaciente.objects.create(paciente=paciente, nutri=request.user, texto=texto)
     messages.add_message(request, constants.SUCCESS, 'Anotação registada.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def dado_clinico_editar(request, id, dado_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    dado = get_object_or_404(DadosPaciente, id=dado_id, paciente=paciente)
+    parsed, err = _parse_dados_clinicos_post(request.POST)
+    if err:
+        messages.add_message(request, constants.ERROR, err)
+        return redirect('dados_paciente', id=paciente.id)
+
+    dado.data = timezone.now()
+    dado.peso = parsed['peso']
+    dado.altura = parsed['altura']
+    dado.percentual_gordura = parsed['percentual_gordura']
+    dado.percentual_musculo = parsed['percentual_musculo']
+    dado.colesterol_hdl = parsed['colesterol_hdl']
+    dado.colesterol_ldl = parsed['colesterol_ldl']
+    dado.colesterol_total = parsed['colesterol_total']
+    dado.trigliceridios = parsed['trigliceridios']
+    dado.save()
+    messages.add_message(request, constants.SUCCESS, 'Registo clínico atualizado.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def dado_clinico_excluir(request, id, dado_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    dado = get_object_or_404(DadosPaciente, id=dado_id, paciente=paciente)
+    dado.delete()
+    messages.add_message(request, constants.SUCCESS, 'Registo clínico removido.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def anotacao_editar(request, id, anotacao_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    anot = get_object_or_404(
+        AnotacaoPaciente,
+        id=anotacao_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    texto = (request.POST.get('texto') or '').strip()
+    if not texto:
+        messages.add_message(request, constants.ERROR, 'Escreva a anotação antes de salvar.')
+        return redirect('dados_paciente', id=paciente.id)
+    if len(texto) > 2000:
+        messages.add_message(request, constants.ERROR, 'Anotação demasiado longa (máx. 2000 caracteres).')
+        return redirect('dados_paciente', id=paciente.id)
+    anot.texto = texto
+    anot.criado_em = timezone.now()
+    anot.save(update_fields=['texto', 'criado_em'])
+    messages.add_message(request, constants.SUCCESS, 'Anotação atualizada.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def anotacao_excluir(request, id, anotacao_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    anot = get_object_or_404(
+        AnotacaoPaciente,
+        id=anotacao_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    anot.delete()
+    messages.add_message(request, constants.SUCCESS, 'Anotação removida.')
     return redirect('dados_paciente', id=paciente.id)
 
 
@@ -347,9 +538,96 @@ def plano_alimentar(request, id):
     paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
 
     if request.method == "GET":
-        refeicoes = Refeicao.objects.filter(paciente=paciente)
+        refeicoes = list(
+            Refeicao.objects.filter(paciente=paciente).order_by('horario', 'id')
+        )
         opcoes = Opcao.objects.filter(refeicao__paciente=paciente).select_related('refeicao')
-        return render(request, 'plano_alimentar.html', {'paciente': paciente, 'refeicao': refeicoes, 'opcao': opcoes})
+        alimentos_select = _alimentos_do_nutricionista(request.user)
+
+        refeicoes_ctx = []
+        totais_dia = {k: v for k, v in TOTAIS_ZERADOS.items()}
+        for r in refeicoes:
+            itens = list(
+                ItemRefeicaoAlimento.objects.filter(refeicao=r).select_related('alimento')
+            )
+            tr = totais_refeicao_mostrados(r, itens)
+            totais_dia = somar_totais(totais_dia, tr)
+            refeicoes_ctx.append({'re': r, 'itens': itens, 'totais': tr})
+
+        macro_pct = None
+        macro_chart_data = None
+        if refeicoes:
+            macro_pct = percentuais_energia_macros(
+                totais_dia['carboidratos_g'],
+                totais_dia['proteinas_g'],
+                totais_dia['gorduras_g'],
+            )
+            if macro_pct:
+                macro_chart_data = {
+                    'labels': ['Carboidratos', 'Proteínas', 'Gorduras'],
+                    'data': [
+                        macro_pct['carboidratos'],
+                        macro_pct['proteinas'],
+                        macro_pct['gorduras'],
+                    ],
+                    'kcal_dia': float(totais_dia['kcal']),
+                }
+
+        opcoes_edit_data = [
+            {
+                'id': o.id,
+                'titulo': o.titulo or '',
+                'descricao': o.descricao or '',
+                'tem_imagem': bool(o.imagem),
+            }
+            for o in Opcao.objects.filter(refeicao__paciente=paciente).order_by('refeicao_id', 'id')
+        ]
+
+        _pid = 2147483647
+        opcao_edit_url_placeholder = reverse(
+            'opcao_editar',
+            kwargs={'id_paciente': paciente.id, 'opcao_id': _pid},
+        ).replace(f'/{_pid}/', '/__NL_OPC__/')
+
+        refeicoes_edit_data = [
+            {
+                'id': r.id,
+                'titulo': r.titulo,
+                'horario': r.horario.strftime('%H:%M') if r.horario else '12:00',
+                'carboidratos': r.carboidratos,
+                'proteinas': r.proteinas,
+                'gorduras': r.gorduras,
+                'edit_url': reverse(
+                    'refeicao_editar',
+                    kwargs={'id_paciente': paciente.id, 'refeicao_id': r.id},
+                ),
+            }
+            for r in refeicoes
+        ]
+
+        return render(
+            request,
+            'plano_alimentar.html',
+            {
+                'paciente': paciente,
+                'refeicoes_ctx': refeicoes_ctx,
+                'opcao': opcoes,
+                'alimentos_select': alimentos_select,
+                'totais_dia': totais_dia,
+                'macro_pct': macro_pct,
+                'macro_chart_data': macro_chart_data,
+                'opcoes_edit_data': opcoes_edit_data,
+                'opcao_edit_url_placeholder': opcao_edit_url_placeholder,
+                'refeicoes_edit_data': refeicoes_edit_data,
+            },
+        )
+
+    messages.add_message(
+        request,
+        constants.ERROR,
+        'Este formulário não pode ser enviado por aqui. Use «Guardar alterações» no modal de editar opção ou os botões da página.',
+    )
+    return redirect('plano_alimentar', id=id)
 
 
 @login_required(login_url='/auth/logar/')
@@ -363,16 +641,67 @@ def refeicao(request, id_paciente):
         proteinas = request.POST.get('proteinas')
         gorduras = request.POST.get('gorduras')
 
+        titulo_norm = _refeicao_titulo_normalizado(titulo)
+        if _refeicao_titulo_duplicado_no_paciente(paciente, titulo_norm):
+            messages.add_message(
+                request,
+                constants.ERROR,
+                'Já existe uma refeição com este título para este paciente. Escolha outro título.',
+            )
+            return redirect('plano_alimentar', id=id_paciente)
+
         Refeicao.objects.create(
             paciente=paciente,
-            titulo=titulo,
-            horario=horario,
-            carboidratos=carboidratos,
-            proteinas=proteinas,
-            gorduras=gorduras,
+            titulo=titulo_norm,
+            horario=horario or '12:00',
+            carboidratos=_int_post(carboidratos, 0),
+            proteinas=_int_post(proteinas, 0),
+            gorduras=_int_post(gorduras, 0),
         )
         messages.add_message(request, constants.SUCCESS, 'Refeição cadastrada')
         return redirect('plano_alimentar', id=id_paciente)
+
+    return redirect('plano_alimentar', id=id_paciente)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def refeicao_editar(request, id_paciente, refeicao_id):
+    paciente = get_object_or_404(Pacientes, id=id_paciente, nutri=request.user)
+    ref = get_object_or_404(Refeicao, id=refeicao_id, paciente=paciente)
+    titulo = request.POST.get('titulo')
+    horario = request.POST.get('horario')
+    carboidratos = request.POST.get('carboidratos')
+    proteinas = request.POST.get('proteinas')
+    gorduras = request.POST.get('gorduras')
+
+    titulo_norm = _refeicao_titulo_normalizado(titulo)
+    if _refeicao_titulo_duplicado_no_paciente(paciente, titulo_norm, excluir_pk=ref.pk):
+        messages.add_message(
+            request,
+            constants.ERROR,
+            'Já existe uma refeição com este título para este paciente. Escolha outro título.',
+        )
+        return redirect('plano_alimentar', id=id_paciente)
+
+    ref.titulo = titulo_norm
+    ref.horario = horario or ref.horario or '12:00'
+    ref.carboidratos = _int_post(carboidratos, 0)
+    ref.proteinas = _int_post(proteinas, 0)
+    ref.gorduras = _int_post(gorduras, 0)
+    ref.save()
+    messages.add_message(request, constants.SUCCESS, 'Refeição atualizada.')
+    return redirect('plano_alimentar', id=id_paciente)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def refeicao_excluir(request, id_paciente, refeicao_id):
+    paciente = get_object_or_404(Pacientes, id=id_paciente, nutri=request.user)
+    ref = get_object_or_404(Refeicao, id=refeicao_id, paciente=paciente)
+    ref.delete()
+    messages.add_message(request, constants.SUCCESS, 'Refeição removida.')
+    return redirect('plano_alimentar', id=id_paciente)
 
 
 @login_required(login_url='/auth/logar/')
@@ -382,7 +711,8 @@ def opcao(request, id_paciente):
     if request.method == "POST":
         id_refeicao = request.POST.get('refeicao')
         imagem = request.FILES.get('imagem')
-        descricao = request.POST.get("descricao")
+        descricao = (request.POST.get('descricao') or '').strip()
+        titulo = (request.POST.get('titulo') or '').strip()[:120]
 
         if not id_refeicao:
             messages.add_message(request, constants.ERROR, 'Selecione uma refeição')
@@ -390,14 +720,173 @@ def opcao(request, id_paciente):
 
         refeicao_obj = get_object_or_404(Refeicao, id=id_refeicao, paciente=paciente)
 
-        if not imagem:
-            messages.add_message(request, constants.ERROR, 'Envie uma imagem')
+        if not imagem and not descricao and not titulo:
+            messages.add_message(
+                request,
+                constants.ERROR,
+                'Indique um título, uma descrição e/ou uma imagem para a opção.',
+            )
+            return redirect('plano_alimentar', id=id_paciente)
+
+        if _opcao_titulo_duplicado_na_refeicao(refeicao_obj, titulo):
+            messages.add_message(
+                request,
+                constants.ERROR,
+                'Já existe uma opção com este título nesta refeição. Escolha outro título.',
+            )
             return redirect('plano_alimentar', id=id_paciente)
 
         Opcao.objects.create(
             refeicao=refeicao_obj,
-            imagem=imagem,
-            descricao=descricao or '',
+            titulo=titulo,
+            imagem=imagem if imagem else None,
+            descricao=descricao,
         )
         messages.add_message(request, constants.SUCCESS, 'Opção cadastrada')
         return redirect('plano_alimentar', id=id_paciente)
+
+    return redirect('plano_alimentar', id=id_paciente)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def opcao_editar(request, id_paciente, opcao_id):
+    paciente = get_object_or_404(Pacientes, id=id_paciente, nutri=request.user)
+    opc = get_object_or_404(Opcao, id=opcao_id, refeicao__paciente=paciente)
+    descricao = (request.POST.get('descricao') or '').strip()
+    titulo = (request.POST.get('titulo') or '').strip()[:120]
+    nova = request.FILES.get('imagem')
+    remover = bool(request.POST.get('remover_imagem'))
+
+    if _opcao_titulo_duplicado_na_refeicao(opc.refeicao, titulo, excluir_pk=opc.pk):
+        messages.add_message(
+            request,
+            constants.ERROR,
+            'Já existe uma opção com este título nesta refeição. Escolha outro título.',
+        )
+        return redirect('plano_alimentar', id=id_paciente)
+
+    tera_imagem = bool(nova) or (not remover and bool(opc.imagem))
+    if not titulo and not descricao and not tera_imagem:
+        messages.add_message(
+            request,
+            constants.ERROR,
+            'A opção precisa de título, texto e/ou imagem.',
+        )
+        return redirect('plano_alimentar', id=id_paciente)
+
+    if remover:
+        if opc.imagem:
+            opc.imagem.delete(save=False)
+        opc.imagem = None
+
+    if nova:
+        if opc.imagem:
+            opc.imagem.delete(save=False)
+        opc.imagem = nova
+
+    opc.titulo = titulo
+    opc.descricao = descricao
+
+    opc.save()
+    messages.add_message(request, constants.SUCCESS, 'Opção atualizada.')
+    return redirect('plano_alimentar', id=id_paciente)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def opcao_excluir(request, id_paciente, opcao_id):
+    paciente = get_object_or_404(Pacientes, id=id_paciente, nutri=request.user)
+    opc = get_object_or_404(Opcao, id=opcao_id, refeicao__paciente=paciente)
+    if opc.imagem:
+        opc.imagem.delete(save=False)
+    opc.delete()
+    messages.add_message(request, constants.SUCCESS, 'Opção removida.')
+    return redirect('plano_alimentar', id=id_paciente)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def item_refeicao_adicionar(request, id_paciente):
+    paciente = get_object_or_404(Pacientes, id=id_paciente, nutri=request.user)
+    refeicao_obj = get_object_or_404(
+        Refeicao,
+        id=request.POST.get('refeicao_id'),
+        paciente=paciente,
+    )
+    alimento = get_object_or_404(AlimentoNutricional, id=request.POST.get('alimento_id'))
+    if not _nutri_pode_usar_alimento(request.user, alimento):
+        messages.add_message(request, constants.ERROR, 'Não pode usar este alimento.')
+        return redirect('plano_alimentar', id=id_paciente)
+    qtd = _decimal_post(request.POST.get('quantidade_gramas'), min_val=Decimal('0.01'), max_val=Decimal('5000'))
+    if qtd is None:
+        messages.add_message(
+            request,
+            constants.ERROR,
+            'Indique uma quantidade em gramas válida (entre 0,01 e 5000).',
+        )
+        return redirect('plano_alimentar', id=id_paciente)
+
+    ItemRefeicaoAlimento.objects.create(
+        refeicao=refeicao_obj,
+        alimento=alimento,
+        quantidade_gramas=qtd,
+    )
+    sincronizar_macros_refeicao_legacy(refeicao_obj)
+    messages.add_message(request, constants.SUCCESS, f'«{alimento.nome}» adicionado à refeição.')
+    return redirect('plano_alimentar', id=id_paciente)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def item_refeicao_remover(request, id_paciente, item_id):
+    paciente = get_object_or_404(Pacientes, id=id_paciente, nutri=request.user)
+    item = get_object_or_404(
+        ItemRefeicaoAlimento,
+        id=item_id,
+        refeicao__paciente=paciente,
+    )
+    ref = item.refeicao
+    nome = item.alimento.nome
+    item.delete()
+    sincronizar_macros_refeicao_legacy(ref)
+    messages.add_message(request, constants.SUCCESS, f'«{nome}» removido.')
+    return redirect('plano_alimentar', id=id_paciente)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def alimento_custom_criar(request, id_paciente):
+    get_object_or_404(Pacientes, id=id_paciente, nutri=request.user)
+    nome = (request.POST.get('nome') or '').strip()
+    if len(nome) < 2:
+        messages.add_message(request, constants.ERROR, 'Indique um nome com pelo menos 2 caracteres.')
+        return redirect('plano_alimentar', id=id_paciente)
+
+    if AlimentoNutricional.objects.filter(nutri=request.user, nome__iexact=nome).exists():
+        messages.add_message(
+            request,
+            constants.ERROR,
+            'Já existe um alimento ou prato seu com esse nome.',
+        )
+        return redirect('plano_alimentar', id=id_paciente)
+
+    def nutri_field(key):
+        v = _decimal_post(request.POST.get(key), default=Decimal('0'), min_val=Decimal('0'), max_val=Decimal('9999'))
+        return v if v is not None else Decimal('0')
+
+    AlimentoNutricional.objects.create(
+        nutri=request.user,
+        nome=nome[:120],
+        eh_prato=request.POST.get('eh_prato') == '1',
+        kcal_100g=nutri_field('kcal_100g'),
+        carboidratos_g_100g=nutri_field('carboidratos_g_100g'),
+        proteinas_g_100g=nutri_field('proteinas_g_100g'),
+        gorduras_g_100g=nutri_field('gorduras_g_100g'),
+        fibra_g_100g=nutri_field('fibra_g_100g'),
+        sodio_mg_100g=nutri_field('sodio_mg_100g'),
+        calcio_mg_100g=nutri_field('calcio_mg_100g'),
+        ferro_mg_100g=nutri_field('ferro_mg_100g'),
+    )
+    messages.add_message(request, constants.SUCCESS, f'Alimento «{nome}» guardado na sua biblioteca.')
+    return redirect('plano_alimentar', id=id_paciente)

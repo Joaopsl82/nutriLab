@@ -6,14 +6,10 @@
 
     <div class="no-print">
     {% if messages %}
-        <br>
         {% for message in messages %}
-            <div class="alert {{message.tags}}">
-                {{message}}
-            </div>
+            <div class="alert {{ message.tags }} mb-2">{{ message }}</div>
         {% endfor %}
     {% endif %}
-    <br>
     </div>
 
     <div class="no-print d-flex align-items-center gap-3 mb-4 flex-column flex-sm-row text-center text-sm-left">
@@ -23,118 +19,367 @@
             <p class="nl-page-sub mb-0"><strong>{{ paciente.nome }}</strong> &mdash; {{ paciente.idade }} anos</p>
         </div>
     </div>
-    
+
     <hr class="print-only">
 
-    <div class="no-print mb-3 d-flex flex-wrap gap-2 plano-botoes-acoes">
-    <button type="button" class="btn btn-nl-primary" data-toggle="modal" data-target="#modal">
-        + Nova refeição
-    </button>
-    <button type="button" class="btn btn-nl-outline" id="pdf" title="Use a impressão do navegador para guardar em PDF.">
-        Exportar refeição
-    </button>
+    <div class="no-print mb-3 d-flex flex-wrap gap-2 plano-botoes-acoes align-items-center">
+        <button type="button" class="btn btn-nl-primary" data-toggle="modal" data-target="#modal">
+            + Nova refeição / opção
+        </button>
+        <button type="button" class="btn btn-nl-outline" data-toggle="modal" data-target="#modalAlimentoCustom">
+            + Alimento ou prato (minha biblioteca)
+        </button>
+        <button type="button" class="btn btn-nl-outline" id="pdf" title="Use a impressão do navegador para guardar em PDF.">
+            Exportar / imprimir
+        </button>
     </div>
 
-    <div class="fundo-alimentar" id="plano-alimentar-export">
-        
-    {% for re in refeicao %}
-    <div class="refeicao">
-        <div class="head-refeicao d-flex justify-content-between align-items-center flex-wrap">
-            <span class="pr-2">{{ re.titulo }}</span>
-            <span class="text-nowrap">{{ re.horario }}h</span>
+    <div class="no-print row mb-4 nl-plano-resumo">
+        <div class="col-lg-5 mb-4 mb-lg-0">
+            <div class="nl-card-paciente p-4 h-100">
+                <h2 class="h6 font-weight-bold text-uppercase text-muted mb-3">Resumo do dia (macros)</h2>
+                {% if macro_pct %}
+                <div class="nl-chart-canvas-wrap mx-auto" style="max-width: 260px;">
+                    <canvas id="macroChart" width="260" height="260" aria-label="Distribuição de energia por macronutriente"></canvas>
+                </div>
+                <ul class="list-unstyled small mt-3 mb-0 text-center">
+                    <li><span class="text-muted">Carboidratos:</span> <strong>{{ macro_pct.carboidratos }}%</strong> da energia estimada (4 kcal/g)</li>
+                    <li><span class="text-muted">Proteínas:</span> <strong>{{ macro_pct.proteinas }}%</strong></li>
+                    <li><span class="text-muted">Gorduras:</span> <strong>{{ macro_pct.gorduras }}%</strong></li>
+                </ul>
+                <p class="small text-muted text-center mt-2 mb-0">Energia total referida: <strong>{{ totais_dia.kcal|floatformat:0 }} kcal</strong> (soma das refeições; valores aproximados).</p>
+                {% else %}
+                <p class="text-muted small mb-0">Adicione alimentos às refeições ou preencha os macros manuais na refeição para ver o gráfico de distribuição.</p>
+                {% endif %}
+            </div>
         </div>
+        <div class="col-lg-7">
+            <div class="nl-card-paciente p-4 h-100">
+                <h2 class="h6 font-weight-bold text-uppercase text-muted mb-3">Totais do dia</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm nl-table mb-0">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th class="text-right">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Energia (kcal)</td><td class="text-right">{{ totais_dia.kcal|floatformat:0 }}</td></tr>
+                            <tr><td>Carboidratos (g)</td><td class="text-right">{{ totais_dia.carboidratos_g|floatformat:1 }}</td></tr>
+                            <tr><td>Proteínas (g)</td><td class="text-right">{{ totais_dia.proteinas_g|floatformat:1 }}</td></tr>
+                            <tr><td>Gorduras (g)</td><td class="text-right">{{ totais_dia.gorduras_g|floatformat:1 }}</td></tr>
+                            <tr><td>Fibra (g)</td><td class="text-right">{{ totais_dia.fibra_g|floatformat:1 }}</td></tr>
+                            <tr><td>Sódio (mg)</td><td class="text-right">{{ totais_dia.sodio_mg|floatformat:0 }}</td></tr>
+                            <tr><td>Cálcio (mg)</td><td class="text-right">{{ totais_dia.calcio_mg|floatformat:0 }}</td></tr>
+                            <tr><td>Ferro (mg)</td><td class="text-right">{{ totais_dia.ferro_mg|floatformat:1 }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="body-refeicao">
-            {% for o1 in opcao%}
-                {% if o1.refeicao == re %}
-                    <div class="opcao">
-                        <div class="row align-items-center">
-                            <div class="col-12 col-md-3 col-lg-2 mb-2 mb-md-0 text-center text-md-left">
-                                <img class="img-fluid rounded nl-opcao-img" src="{{ o1.imagem.url }}" alt="">
-                            </div>
-                            <div class="col-12 col-md-9 col-lg-10">
-                                {{ o1.descricao }}
+    <div class="fundo-alimentar nl-plano-fundo" id="plano-alimentar-export">
+
+    {% for ctx in refeicoes_ctx %}
+    {% with re=ctx.re itens=ctx.itens tr=ctx.totais %}
+    <div class="nl-plano-refeicao refeicao mb-4">
+        <div class="nl-plano-refeicao-head head-refeicao d-flex justify-content-between align-items-center flex-wrap">
+            <span class="pr-2">{{ re.titulo }}</span>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="text-nowrap opacity-95">{{ re.horario|time:"H:i" }}</span>
+                <div class="no-print d-flex align-items-center flex-wrap gap-1">
+                    <button type="button" class="btn btn-nl-outline btn-sm js-editar-refeicao"
+                            data-toggle="modal" data-target="#modalEditarRefeicao" data-refeicao-id="{{ re.id }}">
+                        Editar refeição
+                    </button>
+                    <form method="post" action="{% url 'refeicao_excluir' paciente.id re.id %}" class="m-0 d-inline"
+                          onsubmit="return confirm('Remover esta refeição? Também serão removidas as opções e os alimentos associados.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Remover refeição</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="nl-plano-refeicao-body body-refeicao">
+            <div class="no-print nl-plano-macros-inner mb-3">
+                <p class="small font-weight-bold text-muted mb-2">Totais desta refeição</p>
+                <div class="d-flex flex-wrap gap-3 small">
+                    <span><strong>{{ tr.kcal|floatformat:0 }}</strong> kcal</span>
+                    <span>CHO <strong>{{ tr.carboidratos_g|floatformat:1 }}</strong> g</span>
+                    <span>PTN <strong>{{ tr.proteinas_g|floatformat:1 }}</strong> g</span>
+                    <span>LIP <strong>{{ tr.gorduras_g|floatformat:1 }}</strong> g</span>
+                    <span>Fibra <strong>{{ tr.fibra_g|floatformat:1 }}</strong> g</span>
+                </div>
+                {% if itens %}
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm table-bordered bg-white mb-2">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Alimento</th>
+                                <th class="text-right">Qtd (g)</th>
+                                <th class="text-right no-print" title="por 100 g">kcal/100g</th>
+                                <th class="text-right no-print" title="por 100 g">CHO</th>
+                                <th class="text-right no-print" title="por 100 g">PTN</th>
+                                <th class="text-right no-print" title="por 100 g">LIP</th>
+                                <th class="no-print" style="width:1%"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for it in itens %}
+                            {% with a=it.alimento %}
+                            <tr>
+                                <td>
+                                    {{ a.nome }}
+                                    {% if a.eh_prato %}<span class="badge badge-secondary ml-1">Prato</span>{% endif %}
+                                    {% if a.nutri_id %}<span class="badge badge-info ml-1">Seu</span>{% endif %}
+                                </td>
+                                <td class="text-right">{{ it.quantidade_gramas|floatformat:0 }}</td>
+                                <td class="text-right no-print">{{ a.kcal_100g|floatformat:0 }}</td>
+                                <td class="text-right no-print">{{ a.carboidratos_g_100g|floatformat:1 }}</td>
+                                <td class="text-right no-print">{{ a.proteinas_g_100g|floatformat:1 }}</td>
+                                <td class="text-right no-print">{{ a.gorduras_g_100g|floatformat:1 }}</td>
+                                <td class="no-print">
+                                    <form method="post" action="{% url 'item_refeicao_remover' paciente.id it.id %}" class="d-inline" onsubmit="return confirm('Remover este item?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0">×</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="small text-muted mb-2">Valores por 100 g na tabela; totais no topo resultam da quantidade servida.</p>
+                {% else %}
+                <p class="small text-muted mb-2">Sem itens da biblioteca — a linha de totais usa os macros manuais desta refeição (se preenchidos).</p>
+                {% endif %}
+                <form method="post" action="{% url 'item_refeicao_adicionar' paciente.id %}" class="form-row align-items-end no-print">
+                    {% csrf_token %}
+                    <input type="hidden" name="refeicao_id" value="{{ re.id }}">
+                    <div class="col-md-6 mb-2 mb-md-0">
+                        <label class="small d-block mb-1">Alimento ou prato</label>
+                        <select name="alimento_id" class="form-control form-control-sm" required>
+                            <option value="">— Escolher —</option>
+                            {% for al in alimentos_select %}
+                            <option value="{{ al.id }}">{{ al.nome }}{% if al.nutri_id %} (meu){% endif %}{% if al.eh_prato %} · prato{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <label class="small d-block mb-1">Quantidade (g)</label>
+                        <input type="text" name="quantidade_gramas" class="form-control form-control-sm" placeholder="ex.: 150" required inputmode="decimal">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-nl-primary btn-sm btn-block">Somar à refeição</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="nl-plano-opcoes">
+                <p class="nl-plano-opcoes-title no-print">Sugestões e orientações (opções)</p>
+                {% for o1 in opcao %}
+                    {% if o1.refeicao == re %}
+                    <article class="nl-opcao-card opcao">
+                        {% if o1.imagem %}
+                        <img class="nl-opcao-thumb" src="{{ o1.imagem.url }}" alt="">
+                        {% else %}
+                        <div class="nl-opcao-thumb nl-opcao-thumb--empty" aria-hidden="true">Sem imagem</div>
+                        {% endif %}
+                        <div class="nl-opcao-body">
+                            {% if o1.titulo %}<div class="nl-opcao-titulo">{{ o1.titulo }}</div>{% endif %}
+                            <div class="nl-opcao-desc">
+                                {% if o1.descricao %}{{ o1.descricao }}
+                                {% elif o1.imagem and not o1.titulo %}<span class="text-muted font-italic small">Só imagem</span>
+                                {% elif o1.titulo %}<span class="text-muted font-italic small">Sem descrição</span>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
                             </div>
                         </div>
-                    </div>
-                    <br>
-                {% endif %}
-            {% endfor %}
-
+                        <div class="nl-opcao-actions no-print">
+                            <button type="button" class="btn btn-nl-outline btn-sm js-editar-opcao"
+                                    data-toggle="modal" data-target="#modalEditarOpcao" data-opcao-id="{{ o1.id }}">
+                                Editar
+                            </button>
+                            <form method="post" action="{% url 'opcao_excluir' paciente.id o1.id %}" class="m-0"
+                                  onsubmit="return confirm('Remover esta opção?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm btn-block">Remover</button>
+                            </form>
+                        </div>
+                    </article>
+                    {% endif %}
+                {% endfor %}
+            </div>
         </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
 
     </div>
-    <br>
-{% endfor %}
 
+    {{ opcoes_edit_data|json_script:"nl-opcoes-edit" }}
+    {{ opcao_edit_url_placeholder|json_script:"nl-opcao-edit-url-tpl" }}
+    {{ refeicoes_edit_data|json_script:"nl-refeicoes-edit" }}
 
+    <div class="modal fade no-print" id="modalEditarRefeicao" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title titulo mb-0">Editar refeição</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-editar-refeicao" method="post" action="" onsubmit="return nlSubmitEditarRefeicao(this);">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Título</label>
+                            <input type="text" class="form-control" name="titulo" id="edit-refeicao-titulo" maxlength="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Horário</label>
+                            <input type="time" class="form-control" name="horario" id="edit-refeicao-horario" required>
+                        </div>
+                        <p class="small text-muted">Macronutrientes (meta manual)</p>
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label class="small">CHO (g)</label>
+                                <input type="text" class="form-control" name="carboidratos" id="edit-refeicao-cho">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="small">PTN (g)</label>
+                                <input type="text" class="form-control" name="proteinas" id="edit-refeicao-ptn">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="small">LIP (g)</label>
+                                <input type="text" class="form-control" name="gorduras" id="edit-refeicao-lip">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-nl-primary">Guardar refeição</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        
+    <div class="modal fade no-print" id="modalEditarOpcao" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title titulo mb-0">Editar opção</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-editar-opcao" method="post" action="" enctype="multipart/form-data"
+                          onsubmit="return nlSubmitEditOpcao(this);">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Título <span class="text-muted font-weight-normal">(opcional)</span></label>
+                            <input type="text" class="form-control" name="titulo" id="edit-opcao-titulo" maxlength="120" placeholder="Ex.: Sugestão de lanche">
+                        </div>
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <textarea class="form-control" name="descricao" id="edit-opcao-desc" rows="4" placeholder="Orientações para o paciente…"></textarea>
+                        </div>
+                        <p class="small text-muted mb-2 d-none" id="edit-opcao-img-hint">Esta opção tem imagem. Pode substituir ou remover.</p>
+                        <div class="form-group">
+                            <label>Nova imagem <span class="text-muted font-weight-normal">(opcional)</span></label>
+                            <div class="custom-file nl-custom-file">
+                                <input type="file" class="custom-file-input" name="imagem" id="edit-opcao-file" accept="image/*">
+                                <label class="custom-file-label" for="edit-opcao-file" id="edit-opcao-file-label">Escolher ficheiro…</label>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" name="remover_imagem" value="1" id="edit-opcao-remover-img">
+                            <label class="custom-control-label" for="edit-opcao-remover-img">Remover imagem atual</label>
+                        </div>
+                        <button type="submit" class="btn btn-nl-primary">Guardar alterações</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-
-
+    <div class="modal fade no-print" id="modalAlimentoCustom" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered nl-modal-responsive" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title titulo mb-0">Novo alimento ou prato (por 100 g)</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">Os valores são sempre <strong>por 100 gramas</strong> (ou 100 ml). Marque «prato composto» se for uma receita já agregada.</p>
+                    <form method="post" action="{% url 'alimento_custom_criar' paciente.id %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Nome</label>
+                            <input type="text" name="nome" class="form-control" maxlength="120" required placeholder="ex.: Bowl pós-treino">
+                        </div>
+                        <div class="custom-control custom-checkbox mb-3">
+                            <input type="checkbox" class="custom-control-input" name="eh_prato" value="1" id="chk-prato">
+                            <label class="custom-control-label" for="chk-prato">É um prato / receita composta (valores já somados por 100 g)</label>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-2"><label class="small">Energia (kcal)</label><input type="text" name="kcal_100g" class="form-control form-control-sm" value="0"></div>
+                            <div class="col-md-4 mb-2"><label class="small">Carboidratos (g)</label><input type="text" name="carboidratos_g_100g" class="form-control form-control-sm" value="0"></div>
+                            <div class="col-md-4 mb-2"><label class="small">Proteínas (g)</label><input type="text" name="proteinas_g_100g" class="form-control form-control-sm" value="0"></div>
+                            <div class="col-md-4 mb-2"><label class="small">Gorduras (g)</label><input type="text" name="gorduras_g_100g" class="form-control form-control-sm" value="0"></div>
+                            <div class="col-md-4 mb-2"><label class="small">Fibra (g)</label><input type="text" name="fibra_g_100g" class="form-control form-control-sm" value="0"></div>
+                            <div class="col-md-4 mb-2"><label class="small">Sódio (mg)</label><input type="text" name="sodio_mg_100g" class="form-control form-control-sm" value="0"></div>
+                            <div class="col-md-4 mb-2"><label class="small">Cálcio (mg)</label><input type="text" name="calcio_mg_100g" class="form-control form-control-sm" value="0"></div>
+                            <div class="col-md-4 mb-2"><label class="small">Ferro (mg)</label><input type="text" name="ferro_mg_100g" class="form-control form-control-sm" value="0"></div>
+                        </div>
+                        <button type="submit" class="btn btn-nl-primary mt-3">Guardar na minha biblioteca</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade no-print" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered nl-modal-responsive" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                
                 <div class="modal-body">
-                    
-                        <h4 class="titulo">Adicionar refeição</h4>
-
+                        <h4 class="titulo">Adicionar refeição ou opção</h4>
                         <div class="d-flex flex-wrap gap-2 mb-3">
-                        <button type="button" onclick="exibe_refeicao()" class="btn btn-nl-outline">
-                            + Nova refeição
-                        </button>
-                        <button type="button" onclick="exibe_opcao()" class="btn btn-nl-outline">
-                            + Nova opção
-                        </button>
+                        <button type="button" onclick="exibe_refeicao()" class="btn btn-nl-outline">+ Nova refeição</button>
+                        <button type="button" onclick="exibe_opcao()" class="btn btn-nl-outline">+ Nova opção (foto)</button>
                         </div>
-                        <br>
-                        <br>
-                        
+
                         <div id="form-refeicao" style="display: block;">
                             <form action="{% url 'refeicao' paciente.id %}" method="POST">{% csrf_token %}
-                                <label for="validationServerUsername">Título</label>
+                                <label>Título</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" placeholder="Ex: Café da manhã" name="titulo">
                                 </div>
                                 <br>
-                                <label for="validationServerUsername">Horário</label>
+                                <label>Horário</label>
                                 <div class="input-group">
-                                    <input type="time" class="form-control" placeholder="-" name="horario">
+                                    <input type="time" class="form-control" name="horario">
                                 </div>
                                 <br>
-                                <h5 class="titulo">Macronutrientes</h5>
+                                <h5 class="titulo">Macronutrientes (meta manual)</h5>
+                                <p class="small text-muted">Opcional se usar a biblioteca de alimentos abaixo na página; estes valores aparecem quando a refeição ainda não tem itens.</p>
                                 <div class="container px-0">
                                     <div class="row">
                                         <div class="col-12 col-md-4 mb-3 mb-md-0">
-                                            <label for="validationServerUsername">Carboidratos</label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" placeholder="" name="carboidratos">
-                                            </div>
+                                            <label>Carboidratos (g)</label>
+                                            <input type="text" class="form-control" name="carboidratos" value="0">
                                         </div>
-
                                         <div class="col-12 col-md-4 mb-3 mb-md-0">
-                                            <label for="validationServerUsername">Proteínas</label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" placeholder="" name="proteinas">
-                                            </div>
+                                            <label>Proteínas (g)</label>
+                                            <input type="text" class="form-control" name="proteinas" value="0">
                                         </div>
-
                                         <div class="col-12 col-md-4">
-                                            <label for="validationServerUsername">Gorduras</label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" placeholder="" name="gorduras">
-                                            </div>
+                                            <label>Gorduras (g)</label>
+                                            <input type="text" class="form-control" name="gorduras" value="0">
                                         </div>
-
                                     </div>
                                 </div>
                                 <br>
@@ -144,65 +389,212 @@
 
                         <div id="form-opcao" style="display: none;">
                             <form action="{% url 'opcao' paciente.id %}" method="POST" enctype='multipart/form-data'>{% csrf_token %}
-
-                                <label for="validationServerUsername">Selecione a refeição</label>
+                                <label>Selecione a refeição</label>
                                 <div class="input-group">
                                     <select class="form-control" name="refeicao">
-                                        {% for re in refeicao %}
-                                            <option value="{{re.id}}">{{re.titulo}}</option>
-                                        {% endfor %} 
+                                        {% for ctx in refeicoes_ctx %}
+                                            <option value="{{ ctx.re.id }}">{{ ctx.re.titulo }}</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
-
                                 <br>
-
-                                <label for="validationServerUsername">Imagem</label>
-                                <div class="input-group">
-                                    <input type="file" class="form-control" placeholder="" name="imagem">
-                                </div>
-                                
+                                <label>Título <span class="text-muted font-weight-normal">(opcional)</span></label>
+                                <input type="text" class="form-control" name="titulo" maxlength="120" placeholder="Ex.: Opção proteica">
                                 <br>
-
-                                <label for="validationServerUsername">Descrição</label>
-                                <div class="input-group">
-                                    <textarea class="form-control" name='descricao'>
-
-                                    </textarea>
+                                <label>Imagem <span class="text-muted font-weight-normal">(opcional)</span></label>
+                                <div class="custom-file nl-custom-file">
+                                    <input type="file" class="custom-file-input" name="imagem" id="nova-opcao-file" accept="image/*">
+                                    <label class="custom-file-label" for="nova-opcao-file" id="nova-opcao-file-label">Escolher ficheiro…</label>
                                 </div>
+                                <p class="small text-muted mt-2 mb-0">Indique pelo menos um título, texto ou imagem.</p>
+                                <br>
+                                <label>Descrição</label>
+                                <textarea class="form-control" name="descricao" rows="3" placeholder="Ex.: orientações ou exemplo de prato"></textarea>
                                 <br>
                                 <input type="submit" value="Cadastrar opção" class="btn btn-nl-primary">
                             </form>
                         </div>
-
                 </div>
-            
             </div>
         </div>
     </div>
 
-
+{% if macro_chart_data %}{{ macro_chart_data|json_script:"nl-macro-chart-data" }}{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    (function () {
+        var el = document.getElementById('nl-opcoes-edit');
+        window.__nlOpcoesEdit = {};
+        if (!el) return;
+        try {
+            var arr = JSON.parse(el.textContent);
+            arr.forEach(function (o) { window.__nlOpcoesEdit[o.id] = o; });
+        } catch (e) {}
+    })();
+
+    (function () {
+        var el = document.getElementById('nl-refeicoes-edit');
+        window.__nlRefeicoesEdit = {};
+        if (!el) return;
+        try {
+            var arr = JSON.parse(el.textContent);
+            arr.forEach(function (r) { window.__nlRefeicoesEdit[r.id] = r; });
+        } catch (e) {}
+    })();
+
+    function nlSubmitEditOpcao(form) {
+        if (!form || !form.action || !String(form.action).replace(/\s/g, '')) {
+            window.alert('Clique em «Editar» numa opção antes de guardar, para definir o destino do formulário.');
+            return false;
+        }
+        return true;
+    }
+
+    function nlSubmitEditarRefeicao(form) {
+        if (!form || !form.action || !String(form.action).replace(/\s/g, '')) {
+            window.alert('Clique em «Editar refeição» antes de guardar.');
+            return false;
+        }
+        return true;
+    }
+
+    function nlPreencherModalEditarOpcao(elBtn) {
+        if (!elBtn || !elBtn.getAttribute) return;
+        var idStr = elBtn.getAttribute('data-opcao-id');
+        if (!idStr) return;
+        var id = parseInt(idStr, 10);
+        var o = window.__nlOpcoesEdit[id] || {};
+        var tplEl = document.getElementById('nl-opcao-edit-url-tpl');
+        var editUrlTpl = '';
+        if (tplEl) {
+            try { editUrlTpl = JSON.parse(tplEl.textContent); } catch (e) {}
+        }
+        var formEdit = document.getElementById('form-editar-opcao');
+        if (formEdit && editUrlTpl) {
+            formEdit.action = editUrlTpl.replace('__NL_OPC__', idStr);
+        }
+        var tit = document.getElementById('edit-opcao-titulo');
+        var desc = document.getElementById('edit-opcao-desc');
+        var rem = document.getElementById('edit-opcao-remover-img');
+        var file = document.getElementById('edit-opcao-file');
+        var lab = document.getElementById('edit-opcao-file-label');
+        var hint = document.getElementById('edit-opcao-img-hint');
+        if (tit) tit.value = o.titulo || '';
+        if (desc) desc.value = o.descricao || '';
+        if (rem) rem.checked = false;
+        if (file) file.value = '';
+        if (lab) lab.textContent = 'Escolher ficheiro…';
+        if (hint) hint.classList.toggle('d-none', !o.tem_imagem);
+    }
+
+    function nlPreencherModalEditarRefeicao(elBtn) {
+        if (!elBtn || !elBtn.getAttribute) return;
+        var idStr = elBtn.getAttribute('data-refeicao-id');
+        if (!idStr) return;
+        var r = window.__nlRefeicoesEdit[parseInt(idStr, 10)];
+        if (!r || !r.edit_url) return;
+        var form = document.getElementById('form-editar-refeicao');
+        if (form) form.action = r.edit_url;
+        var tit = document.getElementById('edit-refeicao-titulo');
+        var hor = document.getElementById('edit-refeicao-horario');
+        var cho = document.getElementById('edit-refeicao-cho');
+        var ptn = document.getElementById('edit-refeicao-ptn');
+        var lip = document.getElementById('edit-refeicao-lip');
+        if (tit) tit.value = r.titulo || '';
+        if (hor) hor.value = r.horario || '';
+        if (cho) cho.value = r.carboidratos != null ? String(r.carboidratos) : '0';
+        if (ptn) ptn.value = r.proteinas != null ? String(r.proteinas) : '0';
+        if (lip) lip.value = r.gorduras != null ? String(r.gorduras) : '0';
+    }
+
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var bo = t.closest('.js-editar-opcao');
+        if (bo) nlPreencherModalEditarOpcao(bo);
+        var br = t.closest('.js-editar-refeicao');
+        if (br) nlPreencherModalEditarRefeicao(br);
+    }, true);
+
+    document.addEventListener('change', function (e) {
+        var el = e.target;
+        if (el.id === 'edit-opcao-file') {
+            var lab = document.getElementById('edit-opcao-file-label');
+            if (lab) lab.textContent = (el.files && el.files[0]) ? el.files[0].name : 'Escolher ficheiro…';
+        }
+        if (el.id === 'nova-opcao-file') {
+            var lab2 = document.getElementById('nova-opcao-file-label');
+            if (lab2) lab2.textContent = (el.files && el.files[0]) ? el.files[0].name : 'Escolher ficheiro…';
+        }
+    });
+
     document.getElementById('pdf').addEventListener('click', function () {
         window.print();
     });
 
     function exibe_refeicao(){
-        const form_refeicao = document.getElementById('form-refeicao')
-        const form_opcao = document.getElementById('form-opcao')
-
-        form_refeicao.style.display = "block"
-        form_opcao.style.display = "none"
-
+        document.getElementById('form-refeicao').style.display = "block";
+        document.getElementById('form-opcao').style.display = "none";
     }
-
     function exibe_opcao(){
-        const form_refeicao = document.getElementById('form-refeicao')
-        const form_opcao = document.getElementById('form-opcao')
-
-        form_refeicao.style.display = "none"
-        form_opcao.style.display = "block"
-
+        document.getElementById('form-refeicao').style.display = "none";
+        document.getElementById('form-opcao').style.display = "block";
     }
+
+    (function () {
+        var elData = document.getElementById('nl-macro-chart-data');
+        var cfg = elData ? JSON.parse(elData.textContent) : null;
+        if (!cfg || !document.getElementById('macroChart')) return;
+        var el = document.getElementById('macroChart');
+        new Chart(el, {
+            type: 'doughnut',
+            data: {
+                labels: cfg.labels,
+                datasets: [{
+                    data: cfg.data,
+                    backgroundColor: ['#0d9488', '#6366f1', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    title: {
+                        display: true,
+                        text: 'Distribuição da energia (%)',
+                        font: { size: 13 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                return ctx.label + ': ' + ctx.raw + '%';
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'kcalCenter',
+                beforeDraw: function (chart) {
+                    var txt = Math.round(cfg.kcal_dia) + ' kcal';
+                    var ctx = chart.ctx;
+                    var meta = chart.getDatasetMeta(0);
+                    if (!meta.data[0]) return;
+                    var x = meta.data[0].x;
+                    var y = meta.data[0].y;
+                    ctx.save();
+                    ctx.font = '600 14px system-ui,sans-serif';
+                    ctx.fillStyle = '#334155';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(txt, x, y);
+                    ctx.restore();
+                }
+            }]
+        });
+    })();
 </script>
 
-{% endblock%}
+{% endblock %}

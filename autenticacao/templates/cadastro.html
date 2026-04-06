@@ -22,8 +22,21 @@
             <p class="sub-titulo">Preencha os dados abaixo</p>
 
             <form action="{% url 'cadastro' %}" method="POST">{% csrf_token %}
-                <span class="bold">Nome de utilizador</span>
-                <input class="form-control input-form" name="usuario" type="text" placeholder="Escolha um nome de utilizador" required autocomplete="username">
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="bold">Nome</span>
+                        <input class="form-control input-form" name="primeiro_nome" type="text" required autocomplete="given-name" maxlength="150">
+                    </div>
+                    <div class="col-md-6 mt-3 mt-md-0">
+                        <span class="bold">Sobrenome</span>
+                        <input class="form-control input-form" name="sobrenome" type="text" required autocomplete="family-name" maxlength="150">
+                    </div>
+                </div>
+                <span class="bold d-block mt-3">Nome de utilizador</span>
+                <input class="form-control input-form" name="usuario" type="text" placeholder="ex.: utilizador.exemplo (sem espaços)" required autocomplete="username" maxlength="150">
+                <p class="small text-muted mb-0 mt-2" style="line-height:1.4;">
+                    Isto é o identificador para <strong>entrar</strong>, não o seu nome completo. Não pode conter espaços; use ponto ou sublinhado entre o nome e o apelido.
+                </p>
                 <span class="bold d-block mt-3">E-mail</span>
                 <input class="form-control input-form" name="email" type="email" placeholder="seu@email.com" required autocomplete="email">
                 <div class="row mt-3">
@@ -38,7 +51,7 @@
                 </div>
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert {{ message.tags }} mt-3 mb-0">{{ message }}</div>
+                        <div class="alert {{ message.tags }} mt-3 mb-0 nl-auth-alert">{{ message }}</div>
                     {% endfor %}
                 {% endif %}
                 <button type="submit" class="btn-first">Registar</button>

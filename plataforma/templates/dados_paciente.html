@@ -10,6 +10,11 @@
     {% endfor %}
 {% endif %}
 
+{{ dados_clinicos_edit_data|json_script:"nl-dados-clinicos-edit" }}
+{{ anotacoes_edit_data|json_script:"nl-anotacoes-edit" }}
+
+<div class="nl-page-dados-clinicos">
+
 <div class="row align-items-center no-print mb-4 flex-column flex-sm-row text-center text-sm-left">
     <div class="col-auto mb-3 mb-sm-0">
         {% paciente_avatar paciente 100 %}
@@ -65,6 +70,7 @@
                 <th scope="col">% gordura</th>
                 <th scope="col">% músculo</th>
                 <th scope="col">Atualização</th>
+                <th scope="col" class="no-print text-right" style="width:1%">Ações</th>
             </tr>
         </thead>
         <tbody>
@@ -75,22 +81,55 @@
                     <td>{{ dado.percentual_gordura }}%</td>
                     <td>{{ dado.percentual_musculo }}%</td>
                     <td>{{ dado.data }}</td>
+                    <td class="no-print text-right text-nowrap">
+                        <button type="button" class="btn btn-sm btn-nl-outline js-editar-dado-clinico"
+                                data-toggle="modal" data-target="#modalEditarDado" data-dado-id="{{ dado.id }}">
+                            Editar
+                        </button>
+                        <form method="post" action="{% url 'dado_clinico_excluir' paciente.id dado.id %}" class="d-inline ml-1"
+                              onsubmit="return confirm('Remover este registo clínico?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                        </form>
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5" class="text-muted text-center py-4">Nenhum registro ainda. Use o botão acima para adicionar.</td>
+                    <td colspan="6" class="text-muted text-center py-4">Nenhum registro ainda. Use o botão acima para adicionar.</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<div class="no-print nl-card-paciente p-3 p-md-4 mb-4">
+<div class="no-print nl-card-paciente nl-dados-paciente-chart-card p-3 p-md-4 mb-3 w-100" style="max-width: 720px;">
+    <h6 class="text-muted text-uppercase small font-weight-bold mb-2">Evolução do peso</h6>
+    <div class="nl-chart-canvas-wrap nl-chart-canvas-wrap--dados-clinicos">
+        <canvas id="myChart"></canvas>
+    </div>
+</div>
+
+<div class="no-print nl-card-paciente nl-dados-paciente-anotacoes-card p-3 p-md-4 mb-0">
     <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Anotações de consulta</h6>
     {% for a in anotacoes %}
     <div class="nl-anotacao border-bottom pb-3 mb-3">
-        <p class="small text-muted mb-1">{{ a.criado_em|date:"d/m/Y H:i" }}</p>
-        <div class="mb-0">{{ a.texto|linebreaksbr }}</div>
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start">
+            <div class="flex-grow-1 pr-sm-2 mb-2 mb-sm-0">
+                <p class="small text-muted mb-1">{{ a.criado_em|date:"d/m/Y H:i" }}</p>
+                <div class="mb-0">{{ a.texto|linebreaksbr }}</div>
+            </div>
+            <div class="no-print flex-shrink-0 d-flex flex-wrap align-items-center">
+                <button type="button" class="btn btn-sm btn-nl-outline mr-1 mb-1 js-editar-anotacao"
+                        data-toggle="modal" data-target="#modalEditarAnotacao" data-anotacao-id="{{ a.id }}">
+                    Editar
+                </button>
+                <form method="post" action="{% url 'anotacao_excluir' paciente.id a.id %}" class="m-0 mb-1 d-inline"
+                      onsubmit="return confirm('Remover esta anotação?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                </form>
+            </div>
+        </div>
     </div>
     {% empty %}
     <p class="text-muted small mb-3">Nenhuma anotação ainda. Use o campo abaixo após cada consulta.</p>
@@ -100,12 +139,6 @@
         <textarea name="texto" id="id-anotacao-texto" class="form-control mb-2" rows="3" maxlength="2000" placeholder="Objetivos, observações, próximos passos…"></textarea>
         <button type="submit" class="btn btn-sm btn-nl-primary">Registar anotação</button>
     </form>
-</div>
-
-<div class="no-print nl-card-paciente p-3 p-md-4 mb-4 w-100" style="max-width: 720px;">
-    <div class="nl-chart-canvas-wrap">
-        <canvas id="myChart"></canvas>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -227,5 +260,196 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalEditarDado" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered nl-modal-responsive" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title titulo mb-0">Editar registo clínico</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-dado-clinico" method="post" action="" onsubmit="return nlSubmitEditarDadoClinico(this);">
+                    {% csrf_token %}
+                    <p class="small text-muted mb-3">Ao guardar, a <strong>data e hora de atualização</strong> deste registo passam a ser o momento atual.</p>
+                    <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Medidas</h6>
+                    <div class="form-row">
+                        <div class="col-md-6 mb-3">
+                            <label>Peso</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="peso" id="id-edit-dado-peso" required>
+                                <div class="input-group-append"><span class="input-group-text">kg</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Altura</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="altura" id="id-edit-dado-altura" required>
+                                <div class="input-group-append"><span class="input-group-text">cm</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>% gordura</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="gordura" id="id-edit-dado-gordura" required>
+                                <div class="input-group-append"><span class="input-group-text">%</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>% músculo</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="musculo" id="id-edit-dado-musculo" required>
+                                <div class="input-group-append"><span class="input-group-text">%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Laboratorial</h6>
+                    <div class="form-row">
+                        <div class="col-md-6 mb-3">
+                            <label>Colesterol HDL</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="hdl" id="id-edit-dado-hdl" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Colesterol LDL</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="ldl" id="id-edit-dado-ldl" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Colesterol total</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="ctotal" id="id-edit-dado-ctotal" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Triglicerídios</label>
+                            <div class="input-group">
+                                <input type="number" step="any" class="form-control" name="triglicerídios" id="id-edit-dado-triglicer" required>
+                                <div class="input-group-append"><span class="input-group-text">mg/dL</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-nl-outline mr-2" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-nl-primary">Guardar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarAnotacao" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title titulo mb-0">Editar anotação</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-anotacao" method="post" action="" onsubmit="return nlSubmitEditarAnotacao(this);">
+                    {% csrf_token %}
+                    <p class="small text-muted mb-2">Ao guardar, a <strong>data e hora</strong> mostradas na lista passam a ser o momento atual.</p>
+                    <label for="id-edit-anotacao-texto" class="small font-weight-bold">Texto</label>
+                    <textarea name="texto" id="id-edit-anotacao-texto" class="form-control" rows="5" maxlength="2000" required></textarea>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-nl-outline mr-2" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-nl-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var el = document.getElementById('nl-dados-clinicos-edit');
+    window.__nlDadosClinicosEdit = {};
+    if (el) {
+        try {
+            JSON.parse(el.textContent).forEach(function (d) { window.__nlDadosClinicosEdit[d.id] = d; });
+        } catch (e) {}
+    }
+    el = document.getElementById('nl-anotacoes-edit');
+    window.__nlAnotacoesEdit = {};
+    if (el) {
+        try {
+            JSON.parse(el.textContent).forEach(function (a) { window.__nlAnotacoesEdit[a.id] = a; });
+        } catch (e) {}
+    }
+
+    function nlSubmitEditarDadoClinico(form) {
+        if (!form || !form.action || !String(form.action).replace(/\s/g, '')) {
+            window.alert('Clique em «Editar» numa linha da tabela antes de guardar.');
+            return false;
+        }
+        return true;
+    }
+    function nlSubmitEditarAnotacao(form) {
+        if (!form || !form.action || !String(form.action).replace(/\s/g, '')) {
+            window.alert('Clique em «Editar» numa anotação antes de guardar.');
+            return false;
+        }
+        return true;
+    }
+    window.nlSubmitEditarDadoClinico = nlSubmitEditarDadoClinico;
+    window.nlSubmitEditarAnotacao = nlSubmitEditarAnotacao;
+
+    function nlPreencherModalEditarDadoClinico(btn) {
+        if (!btn || !btn.getAttribute) return;
+        var idStr = btn.getAttribute('data-dado-id');
+        if (!idStr) return;
+        var d = window.__nlDadosClinicosEdit[parseInt(idStr, 10)];
+        if (!d || !d.edit_url) return;
+        var form = document.getElementById('form-editar-dado-clinico');
+        if (form) form.action = d.edit_url;
+        var set = function (id, v) {
+            var inp = document.getElementById(id);
+            if (inp) inp.value = v != null ? v : '';
+        };
+        set('id-edit-dado-peso', d.peso);
+        set('id-edit-dado-altura', d.altura);
+        set('id-edit-dado-gordura', d.gordura);
+        set('id-edit-dado-musculo', d.musculo);
+        set('id-edit-dado-hdl', d.hdl);
+        set('id-edit-dado-ldl', d.ldl);
+        set('id-edit-dado-ctotal', d.ctotal);
+        set('id-edit-dado-triglicer', d.triglicer);
+    }
+
+    function nlPreencherModalEditarAnotacao(btn) {
+        if (!btn || !btn.getAttribute) return;
+        var idStr = btn.getAttribute('data-anotacao-id');
+        if (!idStr) return;
+        var a = window.__nlAnotacoesEdit[parseInt(idStr, 10)];
+        if (!a || !a.edit_url) return;
+        var form = document.getElementById('form-editar-anotacao');
+        if (form) form.action = a.edit_url;
+        var ta = document.getElementById('id-edit-anotacao-texto');
+        if (ta) ta.value = a.texto || '';
+    }
+
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var bd = t.closest('.js-editar-dado-clinico');
+        if (bd) nlPreencherModalEditarDadoClinico(bd);
+        var ba = t.closest('.js-editar-anotacao');
+        if (ba) nlPreencherModalEditarAnotacao(ba);
+    }, true);
+})();
+</script>
+
+</div>{# /.nl-page-dados-clinicos #}
 
 {% endblock %}

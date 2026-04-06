@@ -33,6 +33,21 @@ DEBUG = os.environ.get('DJANGO_DEBUG', '1').lower() in ('1', 'true', 'yes')
 
 _allowed = os.environ.get('DJANGO_ALLOWED_HOSTS', '').strip()
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()] if _allowed else []
+# Em desenvolvimento, hosts vazios + DEBUG permitem qualquer host; definir lista evita
+# avisos e alinha com cookies CSRF entre localhost e 127.0.0.1.
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+_csrf_origins = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').strip()
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(',') if o.strip()]
+if DEBUG and not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        'http://127.0.0.1:8000',
+        'http://localhost:8000',
+    ]
+
+LOGIN_REDIRECT_URL = '/pacientes/'
+LOGOUT_REDIRECT_URL = '/auth/logar/'
 
 
 # Application definition
@@ -146,7 +161,31 @@ MESSAGE_TAGS = {
     constants.WARNING: 'alert-warning',
 }
 
-# Email
+# E-mail
+# — Sem DJANGO_EMAIL_HOST: backend de consola (nada chega à caixa de entrada; o conteúdo
+#   aparece no terminal onde corre o runserver). O fluxo de ativação por URL continua válido.
+# — Com DJANGO_EMAIL_HOST: SMTP real (Gmail, SendGrid, servidor próprio, etc.).
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', 'joao@dev.com.br')
+_email_host = os.environ.get('DJANGO_EMAIL_HOST', '').strip()
+if _email_host:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = _email_host
+    EMAIL_PORT = int(os.environ.get('DJANGO_EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.environ.get('DJANGO_EMAIL_USE_TLS', '1').lower() in (
+        '1',
+        'true',
+        'yes',
+    )
+    EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL = os.environ.get(
+        'DJANGO_DEFAULT_FROM_EMAIL',
+        EMAIL_HOST_USER or 'noreply@localhost',
+    )
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', 'no-reply@nutrilab.local')
+    DEFAULT_FROM_EMAIL = os.environ.get(
+        'DJANGO_DEFAULT_FROM_EMAIL',
+        EMAIL_HOST_USER,
+    )

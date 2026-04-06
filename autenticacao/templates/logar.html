@@ -20,17 +20,36 @@
         <div class="nl-auth-card">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert {{ message.tags }} mb-3">{{ message }}</div>
+                    <div class="alert {{ message.tags }} mb-3 nl-auth-alert">{{ message }}</div>
                 {% endfor %}
+            {% endif %}
+            {% if activation_url %}
+            <div class="alert alert-info mb-3 nl-activation-dev" role="status">
+                <p class="small mb-3">Ative a conta agora (ambiente de desenvolvimento):</p>
+                <a href="{{ activation_url }}" class="btn btn-primary btn-block btn-sm font-weight-bold">Abrir link de ativação</a>
+            </div>
             {% endif %}
             <h2 class="titulo">Bem-vindo de volta</h2>
             <p class="sub-titulo">Entre com a sua conta</p>
 
-            <form action="{% url 'logar' %}" method="POST">{% csrf_token %}
-                <span class="bold">Nome de utilizador</span>
-                <input class="form-control input-form" name="usuario" type="text" placeholder="O seu nome de utilizador" required autocomplete="username">
-                <span class="bold d-block mt-3">Palavra-passe</span>
-                <input class="form-control input-form" name="senha" type="password" placeholder="••••••••" required autocomplete="current-password">
+            <form action="{% url 'logar' %}" method="post" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <div class="alert alert-danger mb-3">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+                <span class="bold">{{ form.username.label_tag }}</span>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                {% endif %}
+                <span class="bold d-block mt-3">{{ form.password.label_tag }}</span>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                {% endif %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
                 <button type="submit" class="btn-first">Entrar</button>
             </form>
 

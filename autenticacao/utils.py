@@ -36,7 +36,8 @@ def email_html(path_template: str, assunto: str, para: list, **kwargs) -> dict:
     html_content = render_to_string(path_template, kwargs)
     text_content = strip_tags(html_content)
 
-    email = EmailMultiAlternatives(assunto, text_content, settings.EMAIL_HOST_USER, para)
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or settings.EMAIL_HOST_USER
+    email = EmailMultiAlternatives(assunto, text_content, from_email, para)
 
     email.attach_alternative(html_content, "text/html")
     email.send()

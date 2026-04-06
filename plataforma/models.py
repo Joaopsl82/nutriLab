@@ -97,8 +97,115 @@ class Refeicao(models.Model):
 
 class Opcao(models.Model):
     refeicao = models.ForeignKey(Refeicao, on_delete=models.CASCADE)
-    imagem = models.ImageField(upload_to="opcao")
-    descricao = models.TextField()
+    titulo = models.CharField(
+        max_length=120,
+        blank=True,
+        verbose_name='Título curto',
+        help_text='Opcional. Aparece em destaque no cartão (ex.: «Sugestão de lanche»).',
+    )
+    imagem = models.ImageField(upload_to='opcao', blank=True, null=True, verbose_name='Imagem (opcional)')
+    descricao = models.TextField(blank=True)
 
     def __str__(self):
-        return self.descricao
+        if self.titulo:
+            return self.titulo
+        if self.descricao:
+            return self.descricao[:50]
+        return f'Opção #{self.pk}'
+
+
+class AlimentoNutricional(models.Model):
+    """Tabela nutricional por 100 g (referência TACO / valores típicos). nutri nulo = base do sistema."""
+
+    nutri = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='alimentos_custom',
+        verbose_name='Nutricionista (vazio = base)',
+    )
+    nome = models.CharField(max_length=120)
+    eh_prato = models.BooleanField(
+        default=False,
+        verbose_name='Prato / receita composta',
+        help_text='Marque se for um prato com valores já agregados por 100 g.',
+    )
+    kcal_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Energia (kcal/100g)',
+    )
+    carboidratos_g_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Carboidratos (g/100g)',
+    )
+    proteinas_g_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Proteínas (g/100g)',
+    )
+    gorduras_g_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Gorduras (g/100g)',
+    )
+    fibra_g_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Fibra (g/100g)',
+    )
+    sodio_mg_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Sódio (mg/100g)',
+    )
+    calcio_mg_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Cálcio (mg/100g)',
+    )
+    ferro_mg_100g = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=0,
+        verbose_name='Ferro (mg/100g)',
+    )
+
+    class Meta:
+        ordering = ['nome']
+
+    def __str__(self):
+        return self.nome
+
+
+class ItemRefeicaoAlimento(models.Model):
+    refeicao = models.ForeignKey(
+        Refeicao,
+        on_delete=models.CASCADE,
+        related_name='itens_alimentos',
+    )
+    alimento = models.ForeignKey(
+        AlimentoNutricional,
+        on_delete=models.CASCADE,
+        related_name='usos_em_refeicoes',
+    )
+    quantidade_gramas = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        verbose_name='Quantidade (g)',
+    )
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f'{self.alimento.nome} ({self.quantidade_gramas} g)'

@@ -173,7 +173,6 @@ body {
   border: 1px solid var(--nl-border);
   box-shadow: var(--nl-shadow);
   padding: 1.5rem;
-  height: 100%;
   transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
   text-decoration: none !important;
   color: inherit !important;
@@ -293,12 +292,30 @@ body {
 .form-control {
   border-radius: var(--nl-radius-sm) !important;
   border-color: var(--nl-border) !important;
-  padding: 0.55rem 0.85rem;
+  padding: 0.70rem 0.85rem;
 }
 
 .form-control:focus {
   border-color: var(--nl-primary) !important;
   box-shadow: 0 0 0 3px var(--nl-primary-soft) !important;
+}
+
+/* Select: altura fixa do Bootstrap + padding do tema cortavam o texto (ex.: placeholder «Escolher»). */
+select.form-control {
+  height: auto !important;
+  min-height: 2.5rem;
+  line-height: 1.45;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+select.form-control-sm {
+  height: auto !important;
+  min-height: 2.125rem;
+  line-height: 1.45;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  font-size: 0.9375rem;
 }
 
 /* ——— Auth (login / cadastro) ——— */
@@ -349,6 +366,7 @@ body {
 
 .nl-auth-panel {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -358,10 +376,33 @@ body {
 .nl-auth-card {
   width: 100%;
   max-width: 440px;
+  min-width: 0;
   background: var(--nl-surface);
   padding: 2.5rem;
   border-radius: var(--nl-radius);
   box-shadow: var(--nl-shadow-lg);
+  border: 1px solid var(--nl-border);
+}
+
+/* Mensagens e URLs longos não devem rebentar a largura do cartão */
+.nl-auth-card .nl-auth-alert,
+.nl-auth-card .nl-activation-dev {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.nl-auth-card .nl-activation-url {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  background: rgba(15, 23, 42, 0.06);
+  border-radius: var(--nl-radius-sm);
+  color: var(--nl-text);
   border: 1px solid var(--nl-border);
 }
 
@@ -688,14 +729,31 @@ body {
   max-width: 100%;
 }
 
+/* Página dados clínicos: gráfico mais compacto + menos vazio no fim da página */
+.nl-chart-canvas-wrap--dados-clinicos {
+  height: 200px;
+}
+
+.nl-main:has(.nl-page-dados-clinicos) {
+  padding-bottom: 1.25rem;
+}
+
 @media (max-width: 575.98px) {
   .nl-chart-canvas-wrap {
     height: 200px;
+  }
+
+  .nl-chart-canvas-wrap--dados-clinicos {
+    height: 170px;
   }
 }
 
 /* Imagens das opções do plano: limite em ecrãs estreitos */
 @media (max-width: 767.98px) {
+  .nl-main:has(.nl-page-dados-clinicos) {
+    padding-bottom: 1.25rem;
+  }
+
   .nl-opcao-img {
     max-height: 200px;
     width: auto;
@@ -733,6 +791,158 @@ body {
 
 .nl-diff-meta--abaixo {
   color: #0f766e;
+}
+
+/* ——— Plano alimentar: refeições e opções ——— */
+.nl-plano-fundo.fundo-alimentar,
+.fundo-alimentar.nl-plano-fundo {
+  background: linear-gradient(180deg, #f1f5f9 0%, #e8eef5 100%);
+  padding: 1.25rem 1rem;
+  border-radius: var(--nl-radius);
+  border: 1px solid var(--nl-border);
+}
+
+.nl-plano-refeicao {
+  border-radius: var(--nl-radius);
+  overflow: hidden;
+  box-shadow: var(--nl-shadow-lg);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--nl-surface);
+}
+
+.nl-plano-refeicao-head {
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 45%, #14b8a6 100%);
+  color: #fff;
+  padding: 1rem 1.25rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+.nl-plano-refeicao-body {
+  padding: 1.25rem;
+  font-weight: 400;
+}
+
+.nl-plano-macros-inner {
+  background: rgba(13, 148, 136, 0.07);
+  border: 1px solid rgba(13, 148, 136, 0.2);
+  border-radius: var(--nl-radius-sm);
+  padding: 1rem 1.15rem;
+}
+
+.nl-plano-opcoes-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--nl-text-muted);
+  font-weight: 700;
+  margin-bottom: 0.65rem;
+}
+
+.nl-opcao-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  border: 1px solid var(--nl-border);
+  border-radius: var(--nl-radius-sm);
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nl-opcao-card:hover {
+  border-color: rgba(13, 148, 136, 0.35);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.08);
+}
+
+.nl-opcao-thumb {
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f1f5f9;
+}
+
+.nl-opcao-thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+  padding: 0.25rem;
+}
+
+.nl-opcao-body {
+  flex: 1;
+  min-width: 0;
+  color: var(--nl-text);
+  line-height: 1.5;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+}
+
+.nl-opcao-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nl-opcao-actions .btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+}
+
+.nl-opcao-titulo {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--nl-text);
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+
+/* Input ficheiro mais visível (Bootstrap 4 custom-file + tema) */
+.nl-custom-file .custom-file-input:focus ~ .custom-file-label {
+  border-color: var(--nl-primary);
+  box-shadow: 0 0 0 3px var(--nl-primary-soft);
+}
+
+.nl-custom-file .custom-file-label {
+  border-radius: var(--nl-radius-sm);
+  border: 2px solid var(--nl-border);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  color: var(--nl-text);
+  font-weight: 600;
+  padding: 0.55rem 0.85rem;
+  height: auto;
+  min-height: calc(1.5em + 1.1rem + 4px);
+  line-height: 1.45;
+}
+
+.nl-custom-file .custom-file-label::after {
+  content: 'Procurar…';
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent));
+  border: none;
+  border-radius: 0 var(--nl-radius-sm) var(--nl-radius-sm) 0;
+  padding: 0.55rem 1rem;
+  height: auto;
+  min-height: 100%;
+  line-height: inherit;
+}
+
+.nl-custom-file .custom-file-input {
+  height: 100%;
+  min-height: calc(1.5em + 1.1rem + 4px);
 }
 
 /* Toque: não exagerar no hover em dispositivos sem hover */

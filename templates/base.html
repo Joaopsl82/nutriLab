@@ -24,7 +24,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                  <span class="navbar-text text-muted small">Olá, <strong>{{ user.username }}</strong></span>
+                  <span class="navbar-text text-muted small">Bem-vindo, <strong>{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}</strong></span>
                 </li>
               </ul>
             </div>
