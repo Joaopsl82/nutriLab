@@ -1,0 +1,90 @@
+{% extends 'base_plataforma.html' %}
+{% load static %}
+
+{% block 'plataforma' %}
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {{ message.tags }} mb-2">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="nl-card-paciente p-3 p-md-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+        <div>
+            <h1 class="h5 mb-1">{% if gasto %}Editar gasto energético{% else %}Novo registo de gasto energético{% endif %}</h1>
+            <p class="text-muted small mb-0">{{ paciente.nome }}</p>
+        </div>
+        <a href="{% url 'dados_paciente' paciente.id %}" class="btn btn-sm btn-nl-outline mt-2 mt-sm-0">← Voltar aos dados clínicos</a>
+    </div>
+
+    <form method="post" action="">
+        {% csrf_token %}
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Identificação</h6>
+        <div class="form-group">
+            <label for="id-descricao">Descrição / contexto</label>
+            <textarea class="form-control" name="descricao" id="id-descricao" rows="3"
+                placeholder="Motivo do cálculo, notas clínicas…">{% if gasto %}{{ gasto.descricao }}{% endif %}</textarea>
+        </div>
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="id-data">Data <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="data" id="id-data" required
+                    value="{% if gasto %}{{ gasto.data|date:'Y-m-d' }}{% endif %}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="id-altura">Altura (cm)</label>
+                <input type="number" step="any" class="form-control" name="altura" id="id-altura"
+                    value="{% if gasto and gasto.altura %}{{ gasto.altura }}{% endif %}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="id-peso">Peso (kg)</label>
+                <input type="number" step="any" class="form-control" name="peso" id="id-peso"
+                    value="{% if gasto and gasto.peso %}{{ gasto.peso }}{% endif %}">
+            </div>
+        </div>
+
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Cálculos e actividade</h6>
+        <div class="form-group">
+            <label for="id-protocolos">Cálculos por protocolos</label>
+            <textarea class="form-control" name="calculos_protocolos" id="id-protocolos" rows="4"
+                placeholder="Ex.: TMB (Harris-Benedict, Mifflin-St Jeor), TEE, passos intermediários…">{% if gasto %}{{ gasto.calculos_protocolos }}{% endif %}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="id-met">Nível de atividade (MET)</label>
+            <textarea class="form-control" name="nivel_atividade_met" id="id-met" rows="3"
+                placeholder="Factor ou classificação de atividade segundo tabela MET.">{% if gasto %}{{ gasto.nivel_atividade_met }}{% endif %}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="id-atividades">Actividades físicas</label>
+            <textarea class="form-control" name="atividades_fisicas" id="id-atividades" rows="3"
+                placeholder="Tipo, duração, frequência, MET por actividade…">{% if gasto %}{{ gasto.atividades_fisicas }}{% endif %}</textarea>
+        </div>
+        <div class="form-row">
+            <div class="col-md-6 mb-3">
+                <label for="id-fator-lesao">Fator de lesão / estresse</label>
+                <input type="number" step="any" class="form-control" name="fator_lesao" id="id-fator-lesao"
+                    placeholder="Ex.: 1,0 — 1,3"
+                    value="{% if gasto and gasto.fator_lesao %}{{ gasto.fator_lesao }}{% endif %}">
+                <small class="form-text text-muted">Factor multiplicativo em lesão, cirurgia ou inflamação (conforme protocolo utilizado).</small>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id-massa-magra">Massa magra (kg)</label>
+                <input type="number" step="any" class="form-control" name="massa_magra_kg" id="id-massa-magra"
+                    value="{% if gasto and gasto.massa_magra_kg %}{{ gasto.massa_magra_kg }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="id-resultados">Resultados</label>
+            <textarea class="form-control" name="resultados" id="id-resultados" rows="4"
+                placeholder="GET final, recomendações energéticas, notas…">{% if gasto %}{{ gasto.resultados }}{% endif %}</textarea>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+            <a href="{% url 'dados_paciente' paciente.id %}" class="btn btn-nl-outline">Cancelar</a>
+            <button type="submit" class="btn btn-nl-primary">Guardar</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

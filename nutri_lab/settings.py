@@ -184,7 +184,7 @@ if _email_host:
     )
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', 'no-reply@nutrilab.local')
+    EMAIL_HOST_USER = os.environ.get('DJANGO_EMAIL_HOST_USER', 'no-reply@nutripraxis.local')
     DEFAULT_FROM_EMAIL = os.environ.get(
         'DJANGO_DEFAULT_FROM_EMAIL',
         EMAIL_HOST_USER,

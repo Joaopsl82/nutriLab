@@ -12,6 +12,7 @@
 
 {{ dados_clinicos_edit_data|json_script:"nl-dados-clinicos-edit" }}
 {{ anotacoes_edit_data|json_script:"nl-anotacoes-edit" }}
+{{ fichas_anamnese_edit_data|json_script:"nl-fichas-anamnese-edit" }}
 
 <div class="nl-page-dados-clinicos">
 
@@ -25,6 +26,130 @@
     </div>
 </div>
 <hr class="no-print">
+
+<section class="no-print nl-card-paciente nl-secao-anamnese p-3 p-md-4 mb-4">
+    <h2 class="h5 mb-2">1. Ficha de anamnese</h2>
+    <p class="small text-muted mb-3">História clínica e dados da anamnese, em secção própria e em primeiro lugar relativamente aos outros registos desta página.</p>
+    {% for f in fichas_anamnese %}
+    <div class="border rounded p-3 mb-3 bg-white">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start">
+            <div class="flex-grow-1 pr-sm-2 mb-2 mb-sm-0">
+                <p class="small text-muted mb-1">Actualizado em {{ f.atualizado_em|date:"d/m/Y H:i" }}</p>
+                <div class="mb-0 small">{{ f.conteudo|linebreaksbr }}</div>
+            </div>
+            <div class="no-print flex-shrink-0 d-flex flex-wrap align-items-center">
+                <button type="button" class="btn btn-sm btn-nl-outline mr-1 mb-1 js-editar-anamnese"
+                        data-toggle="modal" data-target="#modalEditarAnamnese" data-ficha-id="{{ f.id }}">
+                    Editar
+                </button>
+                <form method="post" action="{% url 'anamnese_excluir' paciente.id f.id %}" class="m-0 mb-1 d-inline"
+                      onsubmit="return confirm('Remover esta ficha de anamnese?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted small mb-3">Nenhuma ficha de anamnese registada ainda.</p>
+    {% endfor %}
+    <form method="post" action="{% url 'anamnese_adicionar' paciente.id %}" class="mt-2">{% csrf_token %}
+        <label for="id-anamnese-conteudo" class="small font-weight-bold">Nova ficha de anamnese</label>
+        <textarea name="conteudo" id="id-anamnese-conteudo" class="form-control mb-2" rows="6" maxlength="20000"
+                  placeholder="Queixa principal, história patológica pregressa, hábitos alimentares, medicamentos, alergias, etc."></textarea>
+        <button type="submit" class="btn btn-sm btn-nl-primary">Guardar ficha</button>
+    </form>
+</section>
+
+<section class="no-print nl-card-paciente p-3 p-md-4 mb-4">
+    <h2 class="h5 mb-2">2. Avaliação antropométrica</h2>
+    <p class="small text-muted mb-3">Descrição, medidas, composição corporal, IMC (calculado a partir da altura e do peso actual), fotos e anexos de exames.</p>
+    <div class="mb-3">
+        <a href="{% url 'avaliacao_antropometrica_nova' paciente.id %}" class="btn btn-sm btn-nl-primary">+ Nova avaliação antropométrica</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped nl-table mb-0">
+            <thead>
+                <tr>
+                    <th scope="col">Data</th>
+                    <th scope="col">Peso (kg)</th>
+                    <th scope="col">Altura (cm)</th>
+                    <th scope="col">IMC (kg/m²)</th>
+                    <th scope="col" class="no-print text-right" style="width:1%">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for av in avaliacoes_antropometricas %}
+                <tr>
+                    <th scope="row">{{ av.data|date:"d/m/Y" }}</th>
+                    <td>{% if av.peso_atual %}{{ av.peso_atual }}{% else %}—{% endif %}</td>
+                    <td>{% if av.altura %}{{ av.altura }}{% else %}—{% endif %}</td>
+                    <td>{% if av.imc %}{{ av.imc|floatformat:2 }}{% else %}—{% endif %}</td>
+                    <td class="no-print text-right text-nowrap">
+                        <a href="{% url 'avaliacao_antropometrica_editar' paciente.id av.id %}" class="btn btn-sm btn-nl-outline">Abrir / editar</a>
+                        <form method="post" action="{% url 'avaliacao_antropometrica_excluir' paciente.id av.id %}" class="d-inline ml-1"
+                              onsubmit="return confirm('Remover esta avaliação antropométrica e todos os anexos?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-muted text-center py-4">Nenhuma avaliação antropométrica. Use o botão acima para criar.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="no-print nl-card-paciente p-3 p-md-4 mb-4">
+    <h2 class="h5 mb-2">3. Gastos energéticos</h2>
+    <p class="small text-muted mb-3">Protocolos, MET, actividades físicas, factor de lesão, massa magra e resultados.</p>
+    <div class="mb-3">
+        <a href="{% url 'gasto_energetico_nova' paciente.id %}" class="btn btn-sm btn-nl-primary">+ Novo registo de gasto energético</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped nl-table mb-0">
+            <thead>
+                <tr>
+                    <th scope="col">Data</th>
+                    <th scope="col">Peso (kg)</th>
+                    <th scope="col">Altura (cm)</th>
+                    <th scope="col">Massa magra (kg)</th>
+                    <th scope="col">Resumo</th>
+                    <th scope="col" class="no-print text-right" style="width:1%">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in gastos_energeticos %}
+                <tr>
+                    <th scope="row">{{ g.data|date:"d/m/Y" }}</th>
+                    <td>{% if g.peso %}{{ g.peso }}{% else %}—{% endif %}</td>
+                    <td>{% if g.altura %}{{ g.altura }}{% else %}—{% endif %}</td>
+                    <td>{% if g.massa_magra_kg %}{{ g.massa_magra_kg }}{% else %}—{% endif %}</td>
+                    <td class="small text-muted" style="max-width:14rem;">{% if g.resultados %}{{ g.resultados|truncatechars:120 }}{% else %}—{% endif %}</td>
+                    <td class="no-print text-right text-nowrap">
+                        <a href="{% url 'gasto_energetico_editar' paciente.id g.id %}" class="btn btn-sm btn-nl-outline">Abrir / editar</a>
+                        <form method="post" action="{% url 'gasto_energetico_excluir' paciente.id g.id %}" class="d-inline ml-1"
+                              onsubmit="return confirm('Remover este registo de gasto energético?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-muted text-center py-4">Nenhum registo. Use o botão acima para criar.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<h2 class="h6 text-muted text-uppercase small font-weight-bold mb-3 no-print">4. Registos clínicos (peso, composição e laboratório)</h2>
 
 <div class="row no-print mb-4">
     <div class="col-12 col-lg-7 mb-3 mb-lg-0">
@@ -146,7 +271,7 @@
     fetch("/grafico_peso/{{ paciente.id }}/").then(function (result) {
         return result.json();
     }).then(function (data_paciente) {
-        const primary = "13, 148, 136";
+        const primary = "47, 107, 79";
         const data = {
             labels: data_paciente["labels"],
             datasets: [{
@@ -346,6 +471,31 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalEditarAnamnese" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title titulo mb-0">Editar ficha de anamnese</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-anamnese" method="post" action="" onsubmit="return nlSubmitEditarAnamnese(this);">
+                    {% csrf_token %}
+                    <p class="small text-muted mb-2">Ao guardar, a <strong>data de actualização</strong> desta ficha passa a ser o momento actual.</p>
+                    <label for="id-edit-anamnese-conteudo" class="small font-weight-bold">Conteúdo</label>
+                    <textarea name="conteudo" id="id-edit-anamnese-conteudo" class="form-control" rows="10" maxlength="20000" required></textarea>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-nl-outline mr-2" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-nl-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalEditarAnotacao" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -387,6 +537,13 @@
             JSON.parse(el.textContent).forEach(function (a) { window.__nlAnotacoesEdit[a.id] = a; });
         } catch (e) {}
     }
+    el = document.getElementById('nl-fichas-anamnese-edit');
+    window.__nlFichasAnamneseEdit = {};
+    if (el) {
+        try {
+            JSON.parse(el.textContent).forEach(function (x) { window.__nlFichasAnamneseEdit[x.id] = x; });
+        } catch (e) {}
+    }
 
     function nlSubmitEditarDadoClinico(form) {
         if (!form || !form.action || !String(form.action).replace(/\s/g, '')) {
@@ -402,8 +559,16 @@
         }
         return true;
     }
+    function nlSubmitEditarAnamnese(form) {
+        if (!form || !form.action || !String(form.action).replace(/\s/g, '')) {
+            window.alert('Clique em «Editar» numa ficha de anamnese antes de guardar.');
+            return false;
+        }
+        return true;
+    }
     window.nlSubmitEditarDadoClinico = nlSubmitEditarDadoClinico;
     window.nlSubmitEditarAnotacao = nlSubmitEditarAnotacao;
+    window.nlSubmitEditarAnamnese = nlSubmitEditarAnamnese;
 
     function nlPreencherModalEditarDadoClinico(btn) {
         if (!btn || !btn.getAttribute) return;
@@ -439,6 +604,18 @@
         if (ta) ta.value = a.texto || '';
     }
 
+    function nlPreencherModalEditarAnamnese(btn) {
+        if (!btn || !btn.getAttribute) return;
+        var idStr = btn.getAttribute('data-ficha-id');
+        if (!idStr) return;
+        var x = window.__nlFichasAnamneseEdit[parseInt(idStr, 10)];
+        if (!x || !x.edit_url) return;
+        var form = document.getElementById('form-editar-anamnese');
+        if (form) form.action = x.edit_url;
+        var ta = document.getElementById('id-edit-anamnese-conteudo');
+        if (ta) ta.value = x.conteudo || '';
+    }
+
     document.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;
@@ -446,6 +623,8 @@
         if (bd) nlPreencherModalEditarDadoClinico(bd);
         var ba = t.closest('.js-editar-anotacao');
         if (ba) nlPreencherModalEditarAnotacao(ba);
+        var bf = t.closest('.js-editar-anamnese');
+        if (bf) nlPreencherModalEditarAnamnese(bf);
     }, true);
 })();
 </script>

@@ -1,18 +1,21 @@
-/* NutriLab — tema moderno */
+/* NutriPraxis — identidade visual */
 :root {
-  --nl-primary: #0d9488;
-  --nl-primary-hover: #0f766e;
-  --nl-primary-soft: rgba(13, 148, 136, 0.12);
-  --nl-accent: #14b8a6;
-  --nl-bg: #f0f4f8;
+  --nl-primary: #2f6b4f;
+  --nl-primary-hover: #265542;
+  --nl-primary-soft: rgba(47, 107, 79, 0.14);
+  --nl-accent: #8fbf9f;
+  --nl-premium: #c8a96b;
+  --nl-premium-soft: rgba(200, 169, 107, 0.22);
+  --nl-bg: #f6f1e8;
   --nl-surface: #ffffff;
-  --nl-text: #0f172a;
-  --nl-text-muted: #64748b;
-  --nl-border: #e2e8f0;
+  --nl-text: #22332b;
+  --nl-text-muted: #56685f;
+  --nl-border: #e5dfd3;
+  --nl-table-head-bg: #eef1eb;
   --nl-radius: 14px;
   --nl-radius-sm: 10px;
-  --nl-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
-  --nl-shadow-lg: 0 4px 6px rgba(15, 23, 42, 0.04), 0 20px 48px rgba(15, 23, 42, 0.08);
+  --nl-shadow: 0 1px 3px rgba(34, 51, 43, 0.06), 0 8px 24px rgba(34, 51, 43, 0.06);
+  --nl-shadow-lg: 0 4px 6px rgba(34, 51, 43, 0.05), 0 20px 48px rgba(34, 51, 43, 0.08);
   --nl-font: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
 }
 
@@ -41,7 +44,7 @@ body {
   font-size: 1.15rem;
   letter-spacing: -0.02em;
   color: var(--nl-text) !important;
-  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent));
+  background: linear-gradient(135deg, var(--nl-primary), var(--nl-premium));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -54,7 +57,7 @@ body {
   width: 2.5rem;
   margin-top: 2px;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--nl-primary), var(--nl-accent));
+  background: linear-gradient(90deg, var(--nl-primary), var(--nl-premium));
   -webkit-text-fill-color: initial;
 }
 
@@ -90,11 +93,10 @@ body {
   transform: translateX(2px);
 }
 
-.nl-nav-link img {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  opacity: 0.9;
+.nl-nav-link .nl-nav-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
 }
 
 .nl-nav-link.nl-nav-link--active {
@@ -120,6 +122,10 @@ body {
   min-width: 0; /* evita overflow horizontal em flex/grid */
 }
 
+.nl-secao-anamnese {
+  border-left: 4px solid var(--nl-primary);
+}
+
 /* ——— Títulos de página ——— */
 .nl-page-title {
   font-size: 1.75rem;
@@ -137,19 +143,20 @@ body {
 
 /* ——— Botões ——— */
 .btn-nl-primary {
-  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent)) !important;
+  background: var(--nl-primary) !important;
   border: none !important;
   color: #fff !important;
   font-weight: 600;
   padding: 0.55rem 1.25rem;
   border-radius: var(--nl-radius-sm) !important;
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 14px rgba(47, 107, 79, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .btn-nl-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+  background: var(--nl-primary-hover) !important;
+  box-shadow: 0 6px 20px rgba(47, 107, 79, 0.35);
   color: #fff !important;
 }
 
@@ -164,6 +171,22 @@ body {
 .btn-nl-outline:hover {
   border-color: var(--nl-primary) !important;
   color: var(--nl-primary) !important;
+}
+
+/* Bootstrap .btn-primary (ex.: link de ativação em dev) — alinhar à marca */
+.btn-primary {
+  background-color: var(--nl-primary) !important;
+  border-color: var(--nl-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--nl-primary-hover) !important;
+  border-color: var(--nl-primary-hover) !important;
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 0.2rem var(--nl-primary-soft) !important;
 }
 
 /* ——— Cards paciente ——— */
@@ -182,7 +205,7 @@ body {
 .nl-card-paciente:hover {
   box-shadow: var(--nl-shadow-lg);
   transform: translateY(-3px);
-  border-color: rgba(13, 148, 136, 0.35);
+  border-color: rgba(47, 107, 79, 0.35);
 }
 
 .nl-card-paciente .foto-perfil {
@@ -264,13 +287,31 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--nl-text-muted);
-  background: #f8fafc;
+  background: var(--nl-table-head-bg);
 }
 
 /* ——— Alerts ——— */
 .alert {
   border-radius: var(--nl-radius-sm) !important;
   border: none !important;
+}
+
+.alert-success {
+  color: var(--nl-text) !important;
+  background: rgba(143, 191, 159, 0.28) !important;
+  border: 1px solid rgba(47, 107, 79, 0.28) !important;
+}
+
+.alert-primary {
+  color: var(--nl-text) !important;
+  background: var(--nl-primary-soft) !important;
+  border: 1px solid rgba(47, 107, 79, 0.22) !important;
+}
+
+.alert-info {
+  color: var(--nl-text) !important;
+  background: rgba(143, 191, 159, 0.2) !important;
+  border: 1px solid rgba(47, 107, 79, 0.2) !important;
 }
 
 /* ——— Modais ——— */
@@ -328,7 +369,8 @@ select.form-control-sm {
 .nl-auth-brand {
   flex: 0 0 38%;
   max-width: 420px;
-  background: linear-gradient(160deg, #0f766e 0%, #0d9488 40%, #2dd4bf 100%);
+  /* Só tons escuros da paleta — gradiente claro (primary→accent) criava teal no meio */
+  background: linear-gradient(165deg, var(--nl-text) 0%, var(--nl-primary) 48%, var(--nl-primary-hover) 100%);
   padding: 3rem 2.5rem;
   display: flex;
   flex-direction: column;
@@ -371,6 +413,7 @@ select.form-control-sm {
   align-items: center;
   justify-content: center;
   padding: 2rem 1.5rem;
+  background: var(--nl-bg);
 }
 
 .nl-auth-card {
@@ -400,7 +443,7 @@ select.form-control-sm {
   word-break: break-all;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(34, 51, 43, 0.06);
   border-radius: var(--nl-radius-sm);
   color: var(--nl-text);
   border: 1px solid var(--nl-border);
@@ -429,16 +472,17 @@ select.form-control-sm {
   padding: 0.75rem 1.25rem;
   font-size: 1rem;
   border-radius: var(--nl-radius-sm);
-  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent));
+  background: var(--nl-primary);
   color: #fff;
   font-weight: 600;
   border: none;
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
-  transition: transform 0.15s ease;
+  box-shadow: 0 4px 14px rgba(47, 107, 79, 0.28);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .nl-auth-card .btn-first:hover {
   transform: translateY(-1px);
+  background: var(--nl-primary-hover);
   color: #fff;
 }
 
@@ -468,7 +512,7 @@ select.form-control-sm {
 
 /* ——— Plano alimentar (área cinza) ——— */
 .fundo-alimentar {
-  background: linear-gradient(180deg, #e8eef4 0%, #e2e8f0 100%) !important;
+  background: linear-gradient(180deg, #ede8df 0%, #e2dcd0 100%) !important;
   border-radius: var(--nl-radius) !important;
   border: 1px solid var(--nl-border) !important;
 }
@@ -480,7 +524,7 @@ select.form-control-sm {
 }
 
 .head-refeicao {
-  background: linear-gradient(90deg, #475569, #64748b) !important;
+  background: linear-gradient(90deg, var(--nl-primary-hover), var(--nl-primary)) !important;
   color: #fff !important;
 }
 
@@ -489,7 +533,7 @@ select.form-control-sm {
 }
 
 .opcao {
-  background: #f1f5f9 !important;
+  background: #f2ede4 !important;
   border-radius: var(--nl-radius-sm) !important;
   border: 1px solid var(--nl-border);
 }
@@ -590,9 +634,9 @@ select.form-control-sm {
     min-width: 4.25rem;
   }
 
-  .nl-nav-link img {
-    width: 28px;
-    height: 28px;
+  .nl-nav-link .nl-nav-icon {
+    width: 22px;
+    height: 22px;
   }
 
   .nl-card-paciente {
@@ -771,8 +815,8 @@ select.form-control-sm {
 }
 
 .nl-badge-situacao--ativo {
-  color: #0f766e;
-  background: rgba(13, 148, 136, 0.15);
+  color: var(--nl-primary);
+  background: var(--nl-primary-soft);
 }
 
 .nl-badge-situacao--pausa {
@@ -790,13 +834,13 @@ select.form-control-sm {
 }
 
 .nl-diff-meta--abaixo {
-  color: #0f766e;
+  color: var(--nl-primary);
 }
 
 /* ——— Plano alimentar: refeições e opções ——— */
 .nl-plano-fundo.fundo-alimentar,
 .fundo-alimentar.nl-plano-fundo {
-  background: linear-gradient(180deg, #f1f5f9 0%, #e8eef5 100%);
+  background: linear-gradient(180deg, #f0ebe3 0%, #e6dfd4 100%);
   padding: 1.25rem 1rem;
   border-radius: var(--nl-radius);
   border: 1px solid var(--nl-border);
@@ -806,12 +850,12 @@ select.form-control-sm {
   border-radius: var(--nl-radius);
   overflow: hidden;
   box-shadow: var(--nl-shadow-lg);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(34, 51, 43, 0.08);
   background: var(--nl-surface);
 }
 
 .nl-plano-refeicao-head {
-  background: linear-gradient(135deg, #0f766e 0%, #0d9488 45%, #14b8a6 100%);
+  background: linear-gradient(135deg, var(--nl-text) 0%, var(--nl-primary) 45%, var(--nl-primary-hover) 100%);
   color: #fff;
   padding: 1rem 1.25rem;
   font-weight: 700;
@@ -825,8 +869,8 @@ select.form-control-sm {
 }
 
 .nl-plano-macros-inner {
-  background: rgba(13, 148, 136, 0.07);
-  border: 1px solid rgba(13, 148, 136, 0.2);
+  background: rgba(47, 107, 79, 0.08);
+  border: 1px solid rgba(47, 107, 79, 0.22);
   border-radius: var(--nl-radius-sm);
   padding: 1rem 1.15rem;
 }
@@ -849,13 +893,13 @@ select.form-control-sm {
   border: 1px solid var(--nl-border);
   border-radius: var(--nl-radius-sm);
   margin-bottom: 0.75rem;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 2px 8px rgba(34, 51, 43, 0.06);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nl-opcao-card:hover {
-  border-color: rgba(13, 148, 136, 0.35);
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.08);
+  border-color: rgba(47, 107, 79, 0.35);
+  box-shadow: 0 4px 14px rgba(47, 107, 79, 0.1);
 }
 
 .nl-opcao-thumb {
@@ -864,7 +908,7 @@ select.form-control-sm {
   border-radius: 10px;
   object-fit: cover;
   flex-shrink: 0;
-  background: #f1f5f9;
+  background: #f0ebe3;
 }
 
 .nl-opcao-thumb--empty {
@@ -918,7 +962,7 @@ select.form-control-sm {
 .nl-custom-file .custom-file-label {
   border-radius: var(--nl-radius-sm);
   border: 2px solid var(--nl-border);
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(180deg, #faf8f4 0%, #f0ebe3 100%);
   color: var(--nl-text);
   font-weight: 600;
   padding: 0.55rem 0.85rem;
@@ -931,7 +975,7 @@ select.form-control-sm {
   content: 'Procurar…';
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, var(--nl-primary), var(--nl-accent));
+  background: var(--nl-primary);
   border: none;
   border-radius: 0 var(--nl-radius-sm) var(--nl-radius-sm) 0;
   padding: 0.55rem 1rem;
@@ -948,6 +992,6 @@ select.form-control-sm {
 /* Toque: não exagerar no hover em dispositivos sem hover */
 @media (hover: none) {
   .nl-card-paciente:active {
-    border-color: rgba(13, 148, 136, 0.45);
+    border-color: rgba(47, 107, 79, 0.45);
   }
 }

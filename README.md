@@ -1,6 +1,6 @@
-# NutriLab
+# NutriPraxis
 
-Plataforma web em **Django** para nutricionistas gerirem **pacientes**, **dados clínicos** (peso, medidas laboratoriais, gráfico de evolução), **planos alimentares** (refeições e opções com imagens) e **anotações de consulta**. Interface responsiva (incluindo mobile), com exportação de dados clínicos em CSV e impressão do plano alimentar pelo navegador.
+A **NutriPraxis** é uma plataforma web em **Django** para nutricionistas gerirem **pacientes**, **dados clínicos** (peso, medidas laboratoriais, gráfico de evolução), **planos alimentares** (refeições e opções com imagens) e **anotações de consulta**. Interface responsiva (incluindo mobile), com exportação de dados clínicos em CSV e impressão do plano alimentar pelo navegador.
 
 ---
 

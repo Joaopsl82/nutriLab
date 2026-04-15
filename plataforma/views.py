@@ -8,11 +8,18 @@ from django.views.decorators.http import require_GET, require_POST
 from django.contrib import messages
 from django.contrib.messages import constants
 from django.db.models import Q
+from datetime import date
 from decimal import Decimal
+
 from .models import (
     AlimentoNutricional,
+    AnexoExameAvaliacao,
     AnotacaoPaciente,
+    AvaliacaoAntropometrica,
     DadosPaciente,
+    FichaAnamnese,
+    FotoAvaliacaoAntropometrica,
+    GastoEnergetico,
     ItemRefeicaoAlimento,
     Opcao,
     Pacientes,
@@ -96,6 +103,49 @@ def _parse_dados_clinicos_post(post):
         'colesterol_total': colesterol_total,
         'trigliceridios': triglicer,
     }, None
+
+
+def _parse_date_required(post, key='data'):
+    raw = (post.get(key) or '').strip()
+    if not raw:
+        return None, 'Indique a data.'
+    try:
+        return date.fromisoformat(raw), None
+    except ValueError:
+        return None, 'Data inválida.'
+
+
+AV_ANTROP_DECIMAL_FIELDS = (
+    'altura',
+    'peso_atual',
+    'peso_ideal',
+    'braco_dir_contraido',
+    'braco_esq_contraido',
+    'braco_dir_relaxado',
+    'braco_esq_relaxado',
+    'antebraco_dir',
+    'antebraco_esq',
+    'punho_dir',
+    'punho_esq',
+    'tronco',
+    'ombro',
+    'peitoral',
+    'cintura',
+    'abdomen',
+    'quadril',
+    'coxa_dir',
+    'coxa_esq',
+    'panturrilha_dir',
+    'panturrilha_esq',
+)
+
+
+def _preencher_avaliacao_antropometrica_de_post(inst, post):
+    inst.descricao = (post.get('descricao') or '').strip()
+    inst.dobras_cutaneas = (post.get('dobras_cutaneas') or '').strip()
+    inst.bioimpedancia = (post.get('bioimpedancia') or '').strip()
+    for name in AV_ANTROP_DECIMAL_FIELDS:
+        setattr(inst, name, _numeric_or_none(post.get(name)))
 
 
 def _decimal_post(s, default=None, min_val=None, max_val=None):
@@ -286,6 +336,19 @@ def dados_paciente(request, id):
     paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
 
     if request.method == "GET":
+        fichas_anamnese = FichaAnamnese.objects.filter(
+            paciente=paciente,
+            nutri=request.user,
+        )
+        avaliacoes_antropometricas = (
+            AvaliacaoAntropometrica.objects.filter(paciente=paciente, nutri=request.user)
+            .prefetch_related('fotos', 'anexos_exames')
+            .order_by('-data', '-id')
+        )
+        gastos_energeticos = GastoEnergetico.objects.filter(
+            paciente=paciente,
+            nutri=request.user,
+        )
         dados_paciente = DadosPaciente.objects.filter(paciente=paciente).order_by('-data')
         anotacoes = AnotacaoPaciente.objects.filter(paciente=paciente, nutri=request.user)
         ultimo_dado = dados_paciente.first()
@@ -322,18 +385,33 @@ def dados_paciente(request, id):
             }
             for a in anotacoes
         ]
+        fichas_anamnese_edit_data = [
+            {
+                'id': f.id,
+                'conteudo': f.conteudo,
+                'edit_url': reverse(
+                    'anamnese_editar',
+                    kwargs={'id': paciente.id, 'ficha_id': f.id},
+                ),
+            }
+            for f in fichas_anamnese
+        ]
 
         return render(
             request,
             'dados_paciente.html',
             {
                 'paciente': paciente,
+                'fichas_anamnese': fichas_anamnese,
+                'avaliacoes_antropometricas': avaliacoes_antropometricas,
+                'gastos_energeticos': gastos_energeticos,
                 'dados_paciente': dados_paciente,
                 'anotacoes': anotacoes,
                 'ultimo_dado': ultimo_dado,
                 'diff_meta': diff_meta,
                 'dados_clinicos_edit_data': dados_clinicos_edit_data,
                 'anotacoes_edit_data': anotacoes_edit_data,
+                'fichas_anamnese_edit_data': fichas_anamnese_edit_data,
             },
         )
 
@@ -468,6 +546,222 @@ def anotacao_excluir(request, id, anotacao_id):
     )
     anot.delete()
     messages.add_message(request, constants.SUCCESS, 'Anotação removida.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def anamnese_adicionar(request, id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    texto = (request.POST.get('conteudo') or '').strip()
+    if not texto:
+        messages.add_message(request, constants.ERROR, 'Preencha o conteúdo da ficha de anamnese.')
+        return redirect('dados_paciente', id=paciente.id)
+    if len(texto) > 20000:
+        messages.add_message(request, constants.ERROR, 'Texto demasiado longo (máx. 20000 caracteres).')
+        return redirect('dados_paciente', id=paciente.id)
+    FichaAnamnese.objects.create(paciente=paciente, nutri=request.user, conteudo=texto)
+    messages.add_message(request, constants.SUCCESS, 'Ficha de anamnese registada.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def anamnese_editar(request, id, ficha_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    ficha = get_object_or_404(
+        FichaAnamnese,
+        id=ficha_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    texto = (request.POST.get('conteudo') or '').strip()
+    if not texto:
+        messages.add_message(request, constants.ERROR, 'Preencha o conteúdo da ficha de anamnese.')
+        return redirect('dados_paciente', id=paciente.id)
+    if len(texto) > 20000:
+        messages.add_message(request, constants.ERROR, 'Texto demasiado longo (máx. 20000 caracteres).')
+        return redirect('dados_paciente', id=paciente.id)
+    ficha.conteudo = texto
+    ficha.save()
+    messages.add_message(request, constants.SUCCESS, 'Ficha de anamnese atualizada.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def anamnese_excluir(request, id, ficha_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    ficha = get_object_or_404(
+        FichaAnamnese,
+        id=ficha_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    ficha.delete()
+    messages.add_message(request, constants.SUCCESS, 'Ficha de anamnese removida.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+def avaliacao_antropometrica_nova(request, id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    if request.method == 'GET':
+        return render(
+            request,
+            'avaliacao_antropometrica_form.html',
+            {'paciente': paciente, 'avaliacao': None},
+        )
+    d, err = _parse_date_required(request.POST)
+    if err:
+        messages.add_message(request, constants.ERROR, err)
+        return redirect('avaliacao_antropometrica_nova', id=paciente.id)
+    av = AvaliacaoAntropometrica(
+        paciente=paciente,
+        nutri=request.user,
+        data=d,
+    )
+    _preencher_avaliacao_antropometrica_de_post(av, request.POST)
+    av.save()
+    for f in request.FILES.getlist('fotos'):
+        if f:
+            FotoAvaliacaoAntropometrica.objects.create(avaliacao=av, imagem=f)
+    for f in request.FILES.getlist('anexos_exames'):
+        if f:
+            AnexoExameAvaliacao.objects.create(avaliacao=av, arquivo=f)
+    messages.add_message(request, constants.SUCCESS, 'Avaliação antropométrica registada.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+def avaliacao_antropometrica_editar(request, id, av_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    av = get_object_or_404(
+        AvaliacaoAntropometrica,
+        id=av_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    if request.method == 'GET':
+        return render(
+            request,
+            'avaliacao_antropometrica_form.html',
+            {'paciente': paciente, 'avaliacao': av},
+        )
+    d, err = _parse_date_required(request.POST)
+    if err:
+        messages.add_message(request, constants.ERROR, err)
+        return redirect('avaliacao_antropometrica_editar', id=paciente.id, av_id=av.id)
+    av.data = d
+    _preencher_avaliacao_antropometrica_de_post(av, request.POST)
+    av.save()
+    for f in request.FILES.getlist('fotos'):
+        if f:
+            FotoAvaliacaoAntropometrica.objects.create(avaliacao=av, imagem=f)
+    for f in request.FILES.getlist('anexos_exames'):
+        if f:
+            AnexoExameAvaliacao.objects.create(avaliacao=av, arquivo=f)
+    messages.add_message(request, constants.SUCCESS, 'Avaliação antropométrica atualizada.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def avaliacao_antropometrica_excluir(request, id, av_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    av = get_object_or_404(
+        AvaliacaoAntropometrica,
+        id=av_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    for foto in av.fotos.all():
+        if foto.imagem:
+            foto.imagem.delete(save=False)
+        foto.delete()
+    for anexo in av.anexos_exames.all():
+        if anexo.arquivo:
+            anexo.arquivo.delete(save=False)
+        anexo.delete()
+    av.delete()
+    messages.add_message(request, constants.SUCCESS, 'Avaliação antropométrica removida.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+def gasto_energetico_nova(request, id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    if request.method == 'GET':
+        return render(
+            request,
+            'gasto_energetico_form.html',
+            {'paciente': paciente, 'gasto': None},
+        )
+    d, err = _parse_date_required(request.POST)
+    if err:
+        messages.add_message(request, constants.ERROR, err)
+        return redirect('gasto_energetico_nova', id=paciente.id)
+    ge = GastoEnergetico(paciente=paciente, nutri=request.user, data=d)
+    ge.descricao = (request.POST.get('descricao') or '').strip()
+    ge.calculos_protocolos = (request.POST.get('calculos_protocolos') or '').strip()
+    ge.nivel_atividade_met = (request.POST.get('nivel_atividade_met') or '').strip()
+    ge.atividades_fisicas = (request.POST.get('atividades_fisicas') or '').strip()
+    ge.resultados = (request.POST.get('resultados') or '').strip()
+    ge.altura = _numeric_or_none(request.POST.get('altura'))
+    ge.peso = _numeric_or_none(request.POST.get('peso'))
+    ge.fator_lesao = _numeric_or_none(request.POST.get('fator_lesao'))
+    ge.massa_magra_kg = _numeric_or_none(request.POST.get('massa_magra_kg'))
+    ge.save()
+    messages.add_message(request, constants.SUCCESS, 'Gasto energético registado.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+def gasto_energetico_editar(request, id, ge_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    ge = get_object_or_404(
+        GastoEnergetico,
+        id=ge_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    if request.method == 'GET':
+        return render(
+            request,
+            'gasto_energetico_form.html',
+            {'paciente': paciente, 'gasto': ge},
+        )
+    d, err = _parse_date_required(request.POST)
+    if err:
+        messages.add_message(request, constants.ERROR, err)
+        return redirect('gasto_energetico_editar', id=paciente.id, ge_id=ge.id)
+    ge.data = d
+    ge.descricao = (request.POST.get('descricao') or '').strip()
+    ge.calculos_protocolos = (request.POST.get('calculos_protocolos') or '').strip()
+    ge.nivel_atividade_met = (request.POST.get('nivel_atividade_met') or '').strip()
+    ge.atividades_fisicas = (request.POST.get('atividades_fisicas') or '').strip()
+    ge.resultados = (request.POST.get('resultados') or '').strip()
+    ge.altura = _numeric_or_none(request.POST.get('altura'))
+    ge.peso = _numeric_or_none(request.POST.get('peso'))
+    ge.fator_lesao = _numeric_or_none(request.POST.get('fator_lesao'))
+    ge.massa_magra_kg = _numeric_or_none(request.POST.get('massa_magra_kg'))
+    ge.save()
+    messages.add_message(request, constants.SUCCESS, 'Gasto energético atualizado.')
+    return redirect('dados_paciente', id=paciente.id)
+
+
+@login_required(login_url='/auth/logar/')
+@require_POST
+def gasto_energetico_excluir(request, id, ge_id):
+    paciente = get_object_or_404(Pacientes, id=id, nutri=request.user)
+    ge = get_object_or_404(
+        GastoEnergetico,
+        id=ge_id,
+        paciente=paciente,
+        nutri=request.user,
+    )
+    ge.delete()
+    messages.add_message(request, constants.SUCCESS, 'Gasto energético removido.')
     return redirect('dados_paciente', id=paciente.id)
 
 

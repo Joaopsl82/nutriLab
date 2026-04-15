@@ -120,7 +120,7 @@ def cadastro(request):
             )
             email_html(
                 path_template,
-                'Confirme o seu registo — NutriLab',
+                'Confirme o seu registo — NutriPraxis',
                 [email],
                 username=username,
                 link_ativacao=link_ativacao,

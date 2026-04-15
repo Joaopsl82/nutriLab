@@ -3,7 +3,12 @@ from django.db.models import Q
 
 from .models import (
     AlimentoNutricional,
+    AnexoExameAvaliacao,
+    AvaliacaoAntropometrica,
     DadosPaciente,
+    FichaAnamnese,
+    FotoAvaliacaoAntropometrica,
+    GastoEnergetico,
     ItemRefeicaoAlimento,
     Opcao,
     Pacientes,
@@ -43,6 +48,66 @@ class _PacienteDoNutriAdminMixin:
         if request.user.is_superuser:
             return qs
         return qs.filter(paciente__nutri=request.user)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'paciente' and not request.user.is_superuser:
+            kwargs['queryset'] = Pacientes.objects.filter(nutri=request.user)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class _NutriDoPacienteAdminMixin:
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(nutri=request.user)
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser and not change:
+            obj.nutri = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(FichaAnamnese)
+class FichaAnamneseAdmin(_NutriDoPacienteAdminMixin, admin.ModelAdmin):
+    list_display = ('paciente', 'nutri', 'atualizado_em')
+    search_fields = ('paciente__nome', 'conteudo')
+    list_filter = ('atualizado_em',)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'paciente' and not request.user.is_superuser:
+            kwargs['queryset'] = Pacientes.objects.filter(nutri=request.user)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class FotoAvaliacaoInline(admin.TabularInline):
+    model = FotoAvaliacaoAntropometrica
+    extra = 0
+
+
+class AnexoExameInline(admin.TabularInline):
+    model = AnexoExameAvaliacao
+    extra = 0
+
+
+@admin.register(AvaliacaoAntropometrica)
+class AvaliacaoAntropometricaAdmin(_NutriDoPacienteAdminMixin, admin.ModelAdmin):
+    list_display = ('paciente', 'data', 'peso_atual', 'altura')
+    list_filter = ('data',)
+    search_fields = ('paciente__nome', 'descricao')
+    inlines = [FotoAvaliacaoInline, AnexoExameInline]
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'paciente' and not request.user.is_superuser:
+            kwargs['queryset'] = Pacientes.objects.filter(nutri=request.user)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(GastoEnergetico)
+class GastoEnergeticoAdmin(_NutriDoPacienteAdminMixin, admin.ModelAdmin):
+    list_display = ('paciente', 'data', 'peso', 'altura')
+    list_filter = ('data',)
+    search_fields = ('paciente__nome', 'descricao', 'resultados')
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'paciente' and not request.user.is_superuser:

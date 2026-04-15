@@ -18,6 +18,47 @@ urlpatterns = [
         name='dado_clinico_excluir',
     ),
     path('dados_paciente/<str:id>/meta/', views.paciente_peso_meta, name="paciente_peso_meta"),
+    path('dados_paciente/<str:id>/anamnese/', views.anamnese_adicionar, name='anamnese_adicionar'),
+    path(
+        'dados_paciente/<str:id>/anamnese/<int:ficha_id>/editar/',
+        views.anamnese_editar,
+        name='anamnese_editar',
+    ),
+    path(
+        'dados_paciente/<str:id>/anamnese/<int:ficha_id>/excluir/',
+        views.anamnese_excluir,
+        name='anamnese_excluir',
+    ),
+    path(
+        'dados_paciente/<str:id>/avaliacao/nova/',
+        views.avaliacao_antropometrica_nova,
+        name='avaliacao_antropometrica_nova',
+    ),
+    path(
+        'dados_paciente/<str:id>/avaliacao/<int:av_id>/editar/',
+        views.avaliacao_antropometrica_editar,
+        name='avaliacao_antropometrica_editar',
+    ),
+    path(
+        'dados_paciente/<str:id>/avaliacao/<int:av_id>/excluir/',
+        views.avaliacao_antropometrica_excluir,
+        name='avaliacao_antropometrica_excluir',
+    ),
+    path(
+        'dados_paciente/<str:id>/gasto/nova/',
+        views.gasto_energetico_nova,
+        name='gasto_energetico_nova',
+    ),
+    path(
+        'dados_paciente/<str:id>/gasto/<int:ge_id>/editar/',
+        views.gasto_energetico_editar,
+        name='gasto_energetico_editar',
+    ),
+    path(
+        'dados_paciente/<str:id>/gasto/<int:ge_id>/excluir/',
+        views.gasto_energetico_excluir,
+        name='gasto_energetico_excluir',
+    ),
     path('dados_paciente/<str:id>/anotacao/', views.anotacao_adicionar, name="anotacao_adicionar"),
     path(
         'dados_paciente/<str:id>/anotacao/<int:anotacao_id>/editar/',

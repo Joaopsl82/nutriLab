@@ -1,0 +1,210 @@
+﻿{% extends 'base_plataforma.html' %}
+{% load static %}
+
+{% block 'plataforma' %}
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {{ message.tags }} mb-2">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="nl-card-paciente p-3 p-md-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+        <div>
+            <h1 class="h5 mb-1">{% if avaliacao %}Editar avaliação antropométrica{% else %}Nova avaliação antropométrica{% endif %}</h1>
+            <p class="text-muted small mb-0">{{ paciente.nome }}</p>
+        </div>
+        <a href="{% url 'dados_paciente' paciente.id %}" class="btn btn-sm btn-nl-outline mt-2 mt-sm-0">← Voltar aos dados clínicos</a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="">
+        {% csrf_token %}
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3">Descrição e dados gerais</h6>
+        <div class="form-group">
+            <label for="id-descricao">Descrição</label>
+            <textarea class="form-control" name="descricao" id="id-descricao" rows="4"
+                placeholder="Motivo do paciente, observações gerais, objetivos…">{% if avaliacao %}{{ avaliacao.descricao }}{% endif %}</textarea>
+        </div>
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="id-data">Data <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="data" id="id-data" required
+                    value="{% if avaliacao %}{{ avaliacao.data|date:'Y-m-d' }}{% endif %}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="id-altura">Altura (cm)</label>
+                <input type="number" step="any" class="form-control" name="altura" id="id-altura"
+                    value="{% if avaliacao and avaliacao.altura %}{{ avaliacao.altura }}{% endif %}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="id-peso-atual">Peso atual (kg)</label>
+                <input type="number" step="any" class="form-control" name="peso_atual" id="id-peso-atual"
+                    value="{% if avaliacao and avaliacao.peso_atual %}{{ avaliacao.peso_atual }}{% endif %}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="id-peso-ideal">Peso ideal (kg)</label>
+                <input type="number" step="any" class="form-control" name="peso_ideal" id="id-peso-ideal"
+                    value="{% if avaliacao and avaliacao.peso_ideal %}{{ avaliacao.peso_ideal }}{% endif %}">
+            </div>
+        </div>
+        <p class="small text-muted">O <strong>IMC</strong> é calculado automaticamente (peso atual / altura², altura em metros) quando guardar o registo, desde que preencha altura e peso atual.</p>
+        {% if avaliacao and avaliacao.imc %}
+        <p class="small mb-4">IMC com os valores actuais na base de dados: <strong>{{ avaliacao.imc|floatformat:2 }} kg/m²</strong></p>
+        {% endif %}
+
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Circunferências — membros superiores (cm)</h6>
+        <div class="form-row">
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Braço direito contraído</label>
+                <input type="number" step="any" class="form-control" name="braco_dir_contraido"
+                    value="{% if avaliacao and avaliacao.braco_dir_contraido %}{{ avaliacao.braco_dir_contraido }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Braço esquerdo contraído</label>
+                <input type="number" step="any" class="form-control" name="braco_esq_contraido"
+                    value="{% if avaliacao and avaliacao.braco_esq_contraido %}{{ avaliacao.braco_esq_contraido }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Braço direito relaxado</label>
+                <input type="number" step="any" class="form-control" name="braco_dir_relaxado"
+                    value="{% if avaliacao and avaliacao.braco_dir_relaxado %}{{ avaliacao.braco_dir_relaxado }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Braço esquerdo relaxado</label>
+                <input type="number" step="any" class="form-control" name="braco_esq_relaxado"
+                    value="{% if avaliacao and avaliacao.braco_esq_relaxado %}{{ avaliacao.braco_esq_relaxado }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Antebraço direito</label>
+                <input type="number" step="any" class="form-control" name="antebraco_dir"
+                    value="{% if avaliacao and avaliacao.antebraco_dir %}{{ avaliacao.antebraco_dir }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Antebraço esquerdo</label>
+                <input type="number" step="any" class="form-control" name="antebraco_esq"
+                    value="{% if avaliacao and avaliacao.antebraco_esq %}{{ avaliacao.antebraco_esq }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Punho direito</label>
+                <input type="number" step="any" class="form-control" name="punho_dir"
+                    value="{% if avaliacao and avaliacao.punho_dir %}{{ avaliacao.punho_dir }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Punho esquerdo</label>
+                <input type="number" step="any" class="form-control" name="punho_esq"
+                    value="{% if avaliacao and avaliacao.punho_esq %}{{ avaliacao.punho_esq }}{% endif %}">
+            </div>
+        </div>
+
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Circunferências — tronco (cm)</h6>
+        <div class="form-row">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <label>Tronco</label>
+                <input type="number" step="any" class="form-control" name="tronco"
+                    value="{% if avaliacao and avaliacao.tronco %}{{ avaliacao.tronco }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <label>Ombro</label>
+                <input type="number" step="any" class="form-control" name="ombro"
+                    value="{% if avaliacao and avaliacao.ombro %}{{ avaliacao.ombro }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <label>Peitoral</label>
+                <input type="number" step="any" class="form-control" name="peitoral"
+                    value="{% if avaliacao and avaliacao.peitoral %}{{ avaliacao.peitoral }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <label>Cintura</label>
+                <input type="number" step="any" class="form-control" name="cintura"
+                    value="{% if avaliacao and avaliacao.cintura %}{{ avaliacao.cintura }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <label>Abdómen</label>
+                <input type="number" step="any" class="form-control" name="abdomen"
+                    value="{% if avaliacao and avaliacao.abdomen %}{{ avaliacao.abdomen }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <label>Quadril</label>
+                <input type="number" step="any" class="form-control" name="quadril"
+                    value="{% if avaliacao and avaliacao.quadril %}{{ avaliacao.quadril }}{% endif %}">
+            </div>
+        </div>
+
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Circunferências — membros inferiores (cm)</h6>
+        <div class="form-row">
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Coxa direita</label>
+                <input type="number" step="any" class="form-control" name="coxa_dir"
+                    value="{% if avaliacao and avaliacao.coxa_dir %}{{ avaliacao.coxa_dir }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Coxa esquerda</label>
+                <input type="number" step="any" class="form-control" name="coxa_esq"
+                    value="{% if avaliacao and avaliacao.coxa_esq %}{{ avaliacao.coxa_esq }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Panturrilha direita</label>
+                <input type="number" step="any" class="form-control" name="panturrilha_dir"
+                    value="{% if avaliacao and avaliacao.panturrilha_dir %}{{ avaliacao.panturrilha_dir }}{% endif %}">
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <label>Panturrilha esquerda</label>
+                <input type="number" step="any" class="form-control" name="panturrilha_esq"
+                    value="{% if avaliacao and avaliacao.panturrilha_esq %}{{ avaliacao.panturrilha_esq }}{% endif %}">
+            </div>
+        </div>
+
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Composição corporal</h6>
+        <div class="form-group">
+            <label for="id-dobras">Dobras / pregas cutâneas</label>
+            <textarea class="form-control" name="dobras_cutaneas" id="id-dobras" rows="3"
+                placeholder="Ex.: tricipital, subescapular, suprailíaca… (mm)">{% if avaliacao %}{{ avaliacao.dobras_cutaneas }}{% endif %}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="id-bio">Bioimpedância</label>
+            <textarea class="form-control" name="bioimpedancia" id="id-bio" rows="3"
+                placeholder="Dados do aparelho, % gordura, massa magra, água…">{% if avaliacao %}{{ avaliacao.bioimpedancia }}{% endif %}</textarea>
+        </div>
+
+        <h6 class="text-muted text-uppercase small font-weight-bold mb-3 mt-2">Fotos e anexos</h6>
+        <div class="form-row">
+            <div class="col-md-6 mb-3">
+                <label for="id-fotos">Adicionar fotos</label>
+                <input type="file" class="form-control-file" name="fotos" id="id-fotos" accept="image/*" multiple>
+                <small class="form-text text-muted">Pode seleccionar várias imagens. {% if avaliacao %}As fotos já guardadas mantêm-se; aqui só adiciona novas.{% endif %}</small>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id-anexos">Anexar exames (ficheiros)</label>
+                <input type="file" class="form-control-file" name="anexos_exames" id="id-anexos" multiple>
+                <small class="form-text text-muted">PDF, imagens, etc. {% if avaliacao %}Os anexos existentes mantêm-se; aqui só adiciona novos.{% endif %}</small>
+            </div>
+        </div>
+
+        {% if avaliacao %}
+        {% if avaliacao.fotos.all %}
+        <p class="small font-weight-bold mb-1">Fotos registadas</p>
+        <ul class="small mb-3">
+            {% for f in avaliacao.fotos.all %}
+            <li><a href="{{ f.imagem.url }}" target="_blank" rel="noopener">Foto {{ forloop.counter }}</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% if avaliacao.anexos_exames.all %}
+        <p class="small font-weight-bold mb-1">Anexos de exames</p>
+        <ul class="small mb-3">
+            {% for a in avaliacao.anexos_exames.all %}
+            <li><a href="{{ a.arquivo.url }}" target="_blank" rel="noopener">Anexo {{ forloop.counter }} ({{ a.arquivo.name }})</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endif %}
+
+        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+            <a href="{% url 'dados_paciente' paciente.id %}" class="btn btn-nl-outline">Cancelar</a>
+            <button type="submit" class="btn btn-nl-primary">Guardar</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

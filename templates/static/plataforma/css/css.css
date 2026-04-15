@@ -1,7 +1,7 @@
 /* Compatibilidade + ajustes locais (tema principal em css/theme.css) */
 
 .titulo {
-    color: var(--nl-primary, #0d9488);
+    color: var(--nl-primary, #2f6b4f);
     font-weight: 700;
 }
 

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -65,6 +67,263 @@ class AnotacaoPaciente(models.Model):
 
     def __str__(self):
         return f"Anotação {self.paciente.nome} ({self.criado_em:%Y-%m-%d})"
+
+
+class FichaAnamnese(models.Model):
+    paciente = models.ForeignKey(
+        Pacientes,
+        on_delete=models.CASCADE,
+        related_name='fichas_anamnese',
+    )
+    nutri = models.ForeignKey(User, on_delete=models.CASCADE)
+    conteudo = models.TextField(
+        max_length=20000,
+        verbose_name='Conteúdo da ficha',
+        help_text='Queixa principal, história, hábitos, patologias, medicações, etc.',
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-atualizado_em', '-id']
+        verbose_name = 'Ficha de anamnese'
+        verbose_name_plural = 'Fichas de anamnese'
+
+    def __str__(self):
+        return f"Anamnese {self.paciente.nome} ({self.atualizado_em:%Y-%m-%d})"
+
+
+class AvaliacaoAntropometrica(models.Model):
+    paciente = models.ForeignKey(
+        Pacientes,
+        on_delete=models.CASCADE,
+        related_name='avaliacoes_antropometricas',
+    )
+    nutri = models.ForeignKey(User, on_delete=models.CASCADE)
+    descricao = models.TextField(
+        blank=True,
+        verbose_name='Descrição',
+        help_text='Motivo da consulta, observações gerais e objetivos.',
+    )
+    data = models.DateField(verbose_name='Data da avaliação')
+    altura = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Altura (cm)',
+    )
+    peso_atual = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Peso atual (kg)',
+    )
+    peso_ideal = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Peso ideal (kg)',
+    )
+    # Circunferências (cm)
+    braco_dir_contraido = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Braço direito contraído (cm)',
+    )
+    braco_esq_contraido = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Braço esquerdo contraído (cm)',
+    )
+    braco_dir_relaxado = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Braço direito relaxado (cm)',
+    )
+    braco_esq_relaxado = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Braço esquerdo relaxado (cm)',
+    )
+    antebraco_dir = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Antebraço direito (cm)',
+    )
+    antebraco_esq = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Antebraço esquerdo (cm)',
+    )
+    punho_dir = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Punho direito (cm)',
+    )
+    punho_esq = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Punho esquerdo (cm)',
+    )
+    tronco = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Tronco (cm)',
+    )
+    ombro = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Ombro (cm)',
+    )
+    peitoral = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Peitoral (cm)',
+    )
+    cintura = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Cintura (cm)',
+    )
+    abdomen = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Abdómen (cm)',
+    )
+    quadril = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Quadril (cm)',
+    )
+    coxa_dir = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Coxa direita (cm)',
+    )
+    coxa_esq = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Coxa esquerda (cm)',
+    )
+    panturrilha_dir = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Panturrilha direita (cm)',
+    )
+    panturrilha_esq = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        verbose_name='Panturrilha esquerda (cm)',
+    )
+    dobras_cutaneas = models.TextField(
+        blank=True,
+        verbose_name='Dobras / pregas cutâneas',
+        help_text='Registo das dobras (mm) e fórmula utilizada, se aplicável.',
+    )
+    bioimpedancia = models.TextField(
+        blank=True,
+        verbose_name='Bioimpedância',
+        help_text='Valores do equipamento, percentagens, água, etc.',
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-data', '-id']
+        verbose_name = 'Avaliação antropométrica'
+        verbose_name_plural = 'Avaliações antropométricas'
+
+    def __str__(self):
+        return f"Antropometria {self.paciente.nome} ({self.data})"
+
+    @property
+    def imc(self):
+        if self.altura and self.peso_atual and self.altura > 0:
+            h_m = self.altura / Decimal('100')
+            if h_m > 0:
+                return self.peso_atual / (h_m * h_m)
+        return None
+
+
+class FotoAvaliacaoAntropometrica(models.Model):
+    avaliacao = models.ForeignKey(
+        AvaliacaoAntropometrica,
+        on_delete=models.CASCADE,
+        related_name='fotos',
+    )
+    imagem = models.ImageField(upload_to='avaliacoes/fotos', verbose_name='Foto')
+
+    class Meta:
+        verbose_name = 'Foto da avaliação'
+        verbose_name_plural = 'Fotos da avaliação'
+
+
+class AnexoExameAvaliacao(models.Model):
+    avaliacao = models.ForeignKey(
+        AvaliacaoAntropometrica,
+        on_delete=models.CASCADE,
+        related_name='anexos_exames',
+    )
+    arquivo = models.FileField(upload_to='avaliacoes/exames', verbose_name='Anexo (exame)')
+
+    class Meta:
+        verbose_name = 'Anexo de exame'
+        verbose_name_plural = 'Anexos de exames'
+
+
+class GastoEnergetico(models.Model):
+    paciente = models.ForeignKey(
+        Pacientes,
+        on_delete=models.CASCADE,
+        related_name='gastos_energeticos',
+    )
+    nutri = models.ForeignKey(User, on_delete=models.CASCADE)
+    descricao = models.TextField(blank=True, verbose_name='Descrição / contexto')
+    data = models.DateField(verbose_name='Data')
+    altura = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Altura (cm)',
+    )
+    peso = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Peso (kg)',
+    )
+    calculos_protocolos = models.TextField(
+        blank=True,
+        verbose_name='Cálculos por protocolos',
+        help_text='Ex.: Harris-Benedict, Mifflin, TEE, etc.',
+    )
+    nivel_atividade_met = models.TextField(
+        blank=True,
+        verbose_name='Nível de atividade (MET)',
+        help_text='Classificação ou tabela MET utilizada.',
+    )
+    atividades_fisicas = models.TextField(
+        blank=True,
+        verbose_name='Atividades físicas',
+        help_text='Tipo, duração, frequência e MET estimados.',
+    )
+    fator_lesao = models.DecimalField(
+        max_digits=6,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        verbose_name='Fator de lesão / estresse',
+        help_text='Fator multiplicativo em situação de lesão, cirurgia ou inflamação.',
+    )
+    massa_magra_kg = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Massa magra (kg)',
+    )
+    resultados = models.TextField(
+        blank=True,
+        verbose_name='Resultados',
+        help_text='GET, gasto estimado, recomendações energéticas.',
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-data', '-id']
+        verbose_name = 'Gasto energético'
+        verbose_name_plural = 'Gastos energéticos'
+
+    def __str__(self):
+        return f"Gasto energético {self.paciente.nome} ({self.data})"
 
 
 class DadosPaciente(models.Model):
